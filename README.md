@@ -113,43 +113,35 @@
     </div>
 
     <script>
-        let locked = false;
-        const countryList = [
-            "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia", "Austria",
-            "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Benin", "Bhutan", "Bolivia",
-            "Brazil", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Chile", "China",
-            "Colombia", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominican Republic",
-            "Ecuador", "Egypt", "El Salvador", "Estonia", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Georgia", "Germany",
-            "Greece", "Guatemala", "Honduras", "Hungary", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica",
-            "Japan", "Jordan", "Kazakhstan", "Kenya", "Kuwait", "Latvia", "Lebanon", "Malaysia", "Maldives", "Mexico", "Morocco",
-            "Nepal", "Netherlands", "New Zealand", "Nigeria", "North Korea", "Norway", "Pakistan", "Panama", "Peru", "Philippines",
-            "Poland", "Portugal", "Qatar", "Russia", "Saudi Arabia", "Serbia", "Singapore", "South Africa", "South Korea", "Spain",
-            "Sri Lanka", "Sweden", "Switzerland", "Thailand", "Turkey", "Ukraine", "United Arab Emirates", "United Kingdom",
-            "United States", "Uruguay", "Uzbekistan", "Vietnam", "Zimbabwe", "UK", "USA", "Korea", "UAE", "Hong Kong", "Ivory Coast"
-        ];
-
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
             let entries = inputText.split(/\n\s*\n/);
             let output = '';
 
             entries.forEach(entry => {
+                // Remove irrelevant lines (e.g., "View the author's ORCID record")
+                entry = entry.replace(/View the author's ORCID record/gi, '').trim();
+
+                // Regex patterns for matching Name, Address, and Email
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
                 let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
-                let addressPattern = /(.*?(Laboratory|Department|Services|University|Institute|College)[^,]*.*?\d{3,6}.*?,.*?(?:,\s*.*)?(?:P\.?\s*R\.?\s*China)?)/;
-                
+                let addressPattern = /(.*?(Laboratory|Department|Services|University|Institute|College|Street|Road|Ave|Boulevard|Building)[^,]*.*?,.*?(?:,\s*.*)?)/;
+
+                // Match the patterns
                 let nameMatch = entry.match(namePattern);
                 let emailMatch = entry.match(emailPattern);
-                let addressMatch = entry.match(addressPattern) || countryList.find(country => entry.includes(country));
+                let addressMatch = entry.match(addressPattern);
 
+                // Build the output for this entry
                 let formattedEntry = '';
-                if (nameMatch) formattedEntry += nameMatch[0] + '\n';
-                if (addressMatch) formattedEntry += addressMatch[0] + '\n';
-                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';
+                if (nameMatch) formattedEntry += nameMatch[0] + '\n';  // Name
+                if (addressMatch) formattedEntry += addressMatch[0] + '\n';  // Full Address
+                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';  // Email
 
-                output += formattedEntry + '<hr>\n';
+                output += formattedEntry + '<hr>\n';  // Add horizontal line for distinction
             });
 
+            // Display the result in the output container
             document.getElementById("outputContainer").innerHTML = output;
         }
 
@@ -157,10 +149,12 @@
             document.getElementById("loading").style.display = "inline";
             setTimeout(() => {
                 let inputText = document.getElementById("textInput").value;
-                inputText = inputText.replace(/Corresponding author|View the author's ORCID record/gi, '');
-                inputText = inputText.replace(/https?:\/\/\S+/g, '');
+
+                // Clean the text from unwanted info
+                inputText = inputText.replace(/View the author's ORCID record/gi, '').trim();
                 inputText = inputText.replace(/\.\s*\./g, '.');
 
+                // Replace email addresses with mailto links
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
                     return '<a href="mailto:' + email + '">' + email + '</a>';
                 });
@@ -182,12 +176,9 @@
         }
 
         function toggleLock() {
-            locked = !locked;
-            document.querySelectorAll('button, textarea, #fontOptions').forEach(el => {
-                el.disabled = locked;
-            });
-            document.getElementById("outputContainer").contentEditable = !locked;
-            document.querySelector('.lock').classList.toggle('locked', locked);
+            const outputContainer = document.getElementById("outputContainer");
+            outputContainer.contentEditable = outputContainer.contentEditable === "true" ? "false" : "true";
+            document.querySelector('.lock').classList.toggle('locked');
         }
 
         function changeFont() {
