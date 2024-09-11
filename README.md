@@ -25,7 +25,7 @@
         }
         div#outputContainer {
             width: 100%;
-            height: 400px;
+            height: 500px;
             padding: 10px;
             border-radius: 5px;
             border: 1px solid #ccc;
@@ -74,6 +74,18 @@
             display: none;
             color: red;
         }
+        #fontOptions {
+            margin-top: 10px;
+        }
+        #fullPage {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+        }
+        #copyButton {
+            background-color: #ffa500;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -82,10 +94,26 @@
     <br>
     <button class="green" onclick="cleanText()">Fix Text</button>
     <button class="blue" onclick="advancedFixText()">Advanced Fix</button>
+    <button id="copyButton" onclick="copyText()">Copy</button>
+    <button class="lock" onclick="toggleLock()">Lock</button>
+    <button id="fullPage" onclick="toggleFullScreen()">Full Page</button>
     <br><br>
-    <div id="outputContainer"></div>
+    <div id="outputContainer" contenteditable="true"></div>
+
+    <div id="fontOptions">
+        <label for="fontSelect">Font:</label>
+        <select id="fontSelect" onchange="changeFont()">
+            <option value="'Times New Roman', serif">Times New Roman</option>
+            <option value="Arial, sans-serif">Arial</option>
+            <option value="Courier New, monospace">Courier New</option>
+        </select>
+
+        <label for="fontSize">Size:</label>
+        <input type="number" id="fontSize" value="18" min="10" max="40" onchange="changeFontSize()">
+    </div>
 
     <script>
+        let locked = false;
         const countryList = [
             "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia", "Austria",
             "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Benin", "Bhutan", "Bolivia",
@@ -102,51 +130,26 @@
 
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
-
-            // Split the input by two newlines to treat each entry separately
             let entries = inputText.split(/\n\s*\n/);
-
             let output = '';
 
-            // Process each entry
             entries.forEach(entry => {
-                // Remove irrelevant lines (e.g., "View the author's ORCID record", "Corresponding author.")
-                entry = entry.replace(/View the author's ORCID record|Corresponding author\./gi, '').trim();
+                let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
+                let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
+                let addressPattern = /(.*?(Laboratory|Department|Services|University|Institute|College)[^,]*.*?\d{3,6}.*?,.*?(?:,\s*.*)?(?:P\.?\s*R\.?\s*China)?)/;
+                
+                let nameMatch = entry.match(namePattern);
+                let emailMatch = entry.match(emailPattern);
+                let addressMatch = entry.match(addressPattern) || countryList.find(country => entry.includes(country));
 
-                // Extract key components using regex
-                const namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;  // Simple name pattern
-                const emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
-                const departmentPattern = /(.*?(Laboratory|Department|Services)[^,]*)/;
-                const universityPattern = /(.*?(University|Institute|College)[^,]*)/;
-                const addressPattern = /(.*?\d{3,6}.*?,.*?(?:,\s*.*)?(?:P\.?\s*R\.?\s*China)?)/;
-
-                // Match the patterns
-                const nameMatch = entry.match(namePattern);
-                const emailMatch = entry.match(emailPattern);
-                const departmentMatch = entry.match(departmentPattern);
-                const universityMatch = entry.match(universityPattern);
-                let addressMatch = entry.match(addressPattern);
-
-                // If no explicit address found, look for country mentions to detect address
-                if (!addressMatch) {
-                    addressMatch = countryList.find(country => entry.includes(country));
-                }
-
-                // Build the output for this entry
                 let formattedEntry = '';
                 if (nameMatch) formattedEntry += nameMatch[0] + '\n';
-                if (departmentMatch) formattedEntry += departmentMatch[0] + '\n';
-                if (universityMatch) formattedEntry += universityMatch[0] + '\n';
-                if (addressMatch) formattedEntry += addressMatch[0] + '\n';  // Address line before email
-                if (emailMatch) {
-                    formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';
-                }
+                if (addressMatch) formattedEntry += addressMatch[0] + '\n';
+                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';
 
-                // Add this formatted entry to the output
-                output += formattedEntry + '\n';
+                output += formattedEntry + '<hr>\n';
             });
 
-            // Display the result in the output container
             document.getElementById("outputContainer").innerHTML = output;
         }
 
@@ -154,13 +157,10 @@
             document.getElementById("loading").style.display = "inline";
             setTimeout(() => {
                 let inputText = document.getElementById("textInput").value;
-
-                // Clean the text from special characters, links, and unwanted info
                 inputText = inputText.replace(/Corresponding author|View the author's ORCID record/gi, '');
                 inputText = inputText.replace(/https?:\/\/\S+/g, '');
                 inputText = inputText.replace(/\.\s*\./g, '.');
 
-                // Replace email addresses with mailto links
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
                     return '<a href="mailto:' + email + '">' + email + '</a>';
                 });
@@ -168,6 +168,43 @@
                 document.getElementById("outputContainer").innerHTML = inputText;
                 document.getElementById("loading").style.display = "none";
             }, 1000);
+        }
+
+        function toggleFullScreen() {
+            const outputContainer = document.getElementById('outputContainer');
+            if (outputContainer.style.height === '100vh') {
+                outputContainer.style.height = '500px';
+                document.body.style.overflow = 'auto';
+            } else {
+                outputContainer.style.height = '100vh';
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function toggleLock() {
+            locked = !locked;
+            document.querySelectorAll('button, textarea, #fontOptions').forEach(el => {
+                el.disabled = locked;
+            });
+            document.getElementById("outputContainer").contentEditable = !locked;
+            document.querySelector('.lock').classList.toggle('locked', locked);
+        }
+
+        function changeFont() {
+            const font = document.getElementById("fontSelect").value;
+            document.getElementById("outputContainer").style.fontFamily = font;
+        }
+
+        function changeFontSize() {
+            const size = document.getElementById("fontSize").value;
+            document.getElementById("outputContainer").style.fontSize = size + 'px';
+        }
+
+        function copyText() {
+            const outputText = document.getElementById("outputContainer").innerText;
+            navigator.clipboard.writeText(outputText).then(() => {
+                alert('Text copied to clipboard');
+            });
         }
     </script>
 </body>
