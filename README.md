@@ -86,6 +86,20 @@
     <div id="outputContainer"></div>
 
     <script>
+        const countryList = [
+            "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia", "Austria",
+            "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Benin", "Bhutan", "Bolivia",
+            "Brazil", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Chile", "China",
+            "Colombia", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominican Republic",
+            "Ecuador", "Egypt", "El Salvador", "Estonia", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Georgia", "Germany",
+            "Greece", "Guatemala", "Honduras", "Hungary", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica",
+            "Japan", "Jordan", "Kazakhstan", "Kenya", "Kuwait", "Latvia", "Lebanon", "Malaysia", "Maldives", "Mexico", "Morocco",
+            "Nepal", "Netherlands", "New Zealand", "Nigeria", "North Korea", "Norway", "Pakistan", "Panama", "Peru", "Philippines",
+            "Poland", "Portugal", "Qatar", "Russia", "Saudi Arabia", "Serbia", "Singapore", "South Africa", "South Korea", "Spain",
+            "Sri Lanka", "Sweden", "Switzerland", "Thailand", "Turkey", "Ukraine", "United Arab Emirates", "United Kingdom",
+            "United States", "Uruguay", "Uzbekistan", "Vietnam", "Zimbabwe", "UK", "USA", "Korea", "UAE", "Hong Kong", "Ivory Coast"
+        ];
+
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
 
@@ -104,21 +118,26 @@
                 const emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
                 const departmentPattern = /(.*?(Laboratory|Department|Services)[^,]*)/;
                 const universityPattern = /(.*?(University|Institute|College)[^,]*)/;
-                const addressPattern = /((?:[A-Z][a-z]+,\s*)?[A-Z][a-z]+(?:\s*\d{3,6})?.*?(?:,\s*.*?)*(?:P\.?\s*R\.?\s*China)?)/;
+                const addressPattern = /(.*?\d{3,6}.*?,.*?(?:,\s*.*)?(?:P\.?\s*R\.?\s*China)?)/;
 
                 // Match the patterns
                 const nameMatch = entry.match(namePattern);
                 const emailMatch = entry.match(emailPattern);
                 const departmentMatch = entry.match(departmentPattern);
                 const universityMatch = entry.match(universityPattern);
-                const addressMatch = entry.match(addressPattern);
+                let addressMatch = entry.match(addressPattern);
+
+                // If no explicit address found, look for country mentions to detect address
+                if (!addressMatch) {
+                    addressMatch = countryList.find(country => entry.includes(country));
+                }
 
                 // Build the output for this entry
                 let formattedEntry = '';
                 if (nameMatch) formattedEntry += nameMatch[0] + '\n';
                 if (departmentMatch) formattedEntry += departmentMatch[0] + '\n';
                 if (universityMatch) formattedEntry += universityMatch[0] + '\n';
-                if (addressMatch) formattedEntry += addressMatch[0] + '\n';
+                if (addressMatch) formattedEntry += addressMatch[0] + '\n';  // Address line before email
                 if (emailMatch) {
                     formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';
                 }
