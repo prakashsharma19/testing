@@ -17,7 +17,7 @@
             width: 100%;
             height: 100px;
             padding: 10px;
-            font-size: 18px; /* Large text by default */
+            font-size: 18px;
             border-radius: 5px;
             border: 1px solid #ccc;
             margin-bottom: 20px;
@@ -32,9 +32,9 @@
             background-color: #fff;
             overflow-y: auto;
             color: black;
-            font-size: 18px; /* Large text by default */
+            font-size: 18px;
             font-family: 'Times New Roman', serif;
-            white-space: pre-wrap; /* Preserve spaces */
+            white-space: pre-wrap;
         }
         button {
             padding: 5px 10px;
@@ -50,7 +50,7 @@
             color: white;
         }
         button.green {
-            background-color: #32CD32; /* Green color for Fix button */
+            background-color: #32CD32;
             color: white;
         }
         button.red {
@@ -65,58 +65,14 @@
             color: white;
         }
         button.lock.locked {
-            background-color: red; /* Red when locked */
+            background-color: red;
         }
         button:hover {
             opacity: 0.8;
         }
-        #cutTextDisplay {
-            color: green;
-            font-weight: bold;
-            font-size: 24px;
-            margin-left: 10px;
-        }
-        .blinking-cursor::after {
-            content: '|';
-            animation: blink-animation 1s steps(5, start) infinite;
-            font-weight: bold;
-            color: red;
-        }
-        @keyframes blink-animation {
-            to {
-                visibility: hidden;
-            }
-        }
-        #scrollLockNotice {
-            display: none;
-            color: red;
-            font-weight: bold;
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: white;
-            padding: 10px;
-            border: 1px solid red;
-            border-radius: 5px;
-        }
         #loading {
             display: none;
             color: red;
-        }
-        /* Icons for Bold, Italic, Underline */
-        .toolbar button {
-            font-size: 18px;
-            padding: 5px;
-        }
-        .toolbar .icon-button {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 20px;
-            margin-right: 5px;
-        }
-        .toolbar .icon-button:hover {
-            opacity: 0.8;
         }
     </style>
 </head>
@@ -126,146 +82,74 @@
     <br>
     <button class="green" onclick="cleanText()">Fix Text</button>
     <button class="blue" onclick="advancedFixText()">Advanced Fix</button>
-    <label for="breakLineToggle">Break Line</label>
-    <input type="checkbox" id="breakLineToggle" />
-    <label for="autoCutToggle">Automatic Cut</label>
-    <input type="checkbox" id="autoCutToggle" />
-    <span id="loading">Processing, please wait...</span>
-    <span id="cutTextDisplay"></span>
     <br><br>
-    <div class="toolbar">
-        <button class="icon-button" onclick="execCommand('bold')" title="Bold"><b>B</b></button>
-        <button class="icon-button" onclick="execCommand('italic')" title="Italic"><i>I</i></button>
-        <button class="icon-button" onclick="execCommand('underline')" title="Underline"><u>U</u></button>
-        <button class="lock" id="lockButton" onclick="toggleLock()">Lock</button>
-    </div>
-    <div id="outputContainer" contenteditable="true"></div>
-    <button class="red" onclick="deleteAll()">Delete All</button>
-    <br>
-    <button class="blue" onclick="toggleFullScreen()">Full Screen</button>
-
-    <div id="scrollLockNotice">Scrolling is Locked, Unlock first.</div>
+    <div id="outputContainer"></div>
 
     <script>
-        let lockActive = false;
-        let originalOverflow = '';
-
-        // Helper function to clean special characters
-        function removeDiacritics(str) {
-            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        }
-
-        // Advanced Fix function to format text into Name, Department, etc.
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
 
-            // Regular expression patterns to identify key components
-            const namePattern = /([A-Z][a-z]*\s[A-Z][a-z]*)/;  // Assumes name is two words
-            const departmentPattern = /(.*?(Laboratory|Department|Services)[^,]*)/;
-            const universityPattern = /(.*?(University|Institute|College)[^,]*)/;
-            const addressPattern = /(Shanghai\s\d{6}.*P\.\s*R\.\s*China)/i; // Matches Shanghai-based address pattern
-            const emailPattern = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6})/;
+            // Split the input by two newlines to treat each entry separately
+            let entries = inputText.split(/\n\s*\n/);
 
-            // Extracting using the regex patterns
-            const nameMatch = inputText.match(namePattern);
-            const departmentMatch = inputText.match(departmentPattern);
-            const universityMatch = inputText.match(universityPattern);
-            const addressMatch = inputText.match(addressPattern);
-            const emailMatch = inputText.match(emailPattern);
-
-            // Create formatted output
             let output = '';
-            if (nameMatch) output += nameMatch[1] + '\n';
-            if (departmentMatch) output += departmentMatch[1] + '\n';
-            if (universityMatch) output += universityMatch[1] + '\n';
-            if (addressMatch) output += addressMatch[1] + '\n';
-            if (emailMatch) output += emailMatch[1] + '\n';
 
-            // Output the formatted text
-            document.getElementById("outputContainer").innerText = output;
+            // Process each entry
+            entries.forEach(entry => {
+                // Remove irrelevant lines (e.g., "View the author's ORCID record", "Corresponding author.")
+                entry = entry.replace(/View the author's ORCID record|Corresponding author\./gi, '').trim();
+
+                // Extract key components using regex
+                const namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;  // Simple name pattern
+                const emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
+                const departmentPattern = /(.*?(Laboratory|Department|Services)[^,]*)/;
+                const universityPattern = /(.*?(University|Institute|College)[^,]*)/;
+                const addressPattern = /((?:[A-Z][a-z]+,\s*)?[A-Z][a-z]+(?:\s*\d{3,6})?.*?(?:,\s*.*?)*(?:P\.?\s*R\.?\s*China)?)/;
+
+                // Match the patterns
+                const nameMatch = entry.match(namePattern);
+                const emailMatch = entry.match(emailPattern);
+                const departmentMatch = entry.match(departmentPattern);
+                const universityMatch = entry.match(universityPattern);
+                const addressMatch = entry.match(addressPattern);
+
+                // Build the output for this entry
+                let formattedEntry = '';
+                if (nameMatch) formattedEntry += nameMatch[0] + '\n';
+                if (departmentMatch) formattedEntry += departmentMatch[0] + '\n';
+                if (universityMatch) formattedEntry += universityMatch[0] + '\n';
+                if (addressMatch) formattedEntry += addressMatch[0] + '\n';
+                if (emailMatch) {
+                    formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';
+                }
+
+                // Add this formatted entry to the output
+                output += formattedEntry + '\n';
+            });
+
+            // Display the result in the output container
+            document.getElementById("outputContainer").innerHTML = output;
         }
 
-        // Function to clean the text (Existing functionality)
         function cleanText() {
-            document.getElementById("loading").style.display = "inline"; // Show loading indicator
+            document.getElementById("loading").style.display = "inline";
             setTimeout(() => {
                 let inputText = document.getElementById("textInput").value;
 
-                // Remove 'Corresponding author' and 'View the author\'s ORCID record' texts
-                inputText = inputText.replace(/Corresponding author/gi, '');
-                inputText = inputText.replace(/View the author's ORCID record/gi, '');
-
-                // Remove links
+                // Clean the text from special characters, links, and unwanted info
+                inputText = inputText.replace(/Corresponding author|View the author's ORCID record/gi, '');
                 inputText = inputText.replace(/https?:\/\/\S+/g, '');
+                inputText = inputText.replace(/\.\s*\./g, '.');
 
-                // Convert email addresses to mailto links
-                inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b/gi, function(email) {
+                // Replace email addresses with mailto links
+                inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
                     return '<a href="mailto:' + email + '">' + email + '</a>';
                 });
 
-                // Convert special characters to regular text
-                inputText = removeDiacritics(inputText);
-
-                // Remove unwanted full stops
-                inputText = inputText.replace(/\.\s*\./g, '.');
-
-                // Preserve paragraph spacing
-                inputText = inputText.replace(/\n/g, '<br>');
-
-                // Apply break line if toggle is on
-                if (document.getElementById("breakLineToggle").checked) {
-                    inputText = inputText.replace(/,\s*(?!and\b)/g, ',<br>');
-                }
-
-                // Save cleaned text in memory (local storage)
-                localStorage.setItem('outputText', inputText);
-
-                // Output cleaned text in the editable div
                 document.getElementById("outputContainer").innerHTML = inputText;
-
-                document.getElementById("loading").style.display = "none"; // Hide loading indicator
-            }, 1000); // Simulate processing time
+                document.getElementById("loading").style.display = "none";
+            }, 1000);
         }
-
-        // Additional functions like lock, delete, etc. remain unchanged...
-        function execCommand(command) {
-            document.execCommand(command, false, null);
-        }
-
-        function toggleLock() {
-            let lockButton = document.getElementById('lockButton');
-            lockActive = !lockActive;
-            if (lockActive) {
-                lockButton.classList.add('locked');
-                lockButton.textContent = 'Unlock';
-                document.querySelectorAll('button').forEach(btn => btn.disabled = true);
-                lockButton.disabled = false; // Keep lock button enabled
-                originalOverflow = document.body.style.overflow;
-                document.body.style.overflow = 'hidden'; // Lock scrolling
-            } else {
-                lockButton.classList.remove('locked');
-                lockButton.textContent = 'Lock';
-                document.querySelectorAll('button').forEach(btn => btn.disabled = false);
-                document.body.style.overflow = originalOverflow; // Unlock scrolling
-            }
-        }
-
-        function deleteAll() {
-            document.getElementById("textInput").value = '';
-            document.getElementById("outputContainer").innerHTML = '';
-            localStorage.removeItem('outputText'); // Clear from memory
-        }
-
-        window.onload = function() {
-            const savedText = localStorage.getItem('outputText');
-            const cutText = localStorage.getItem('cutText');
-            if (savedText) {
-                document.getElementById('outputContainer').innerText = savedText;
-            }
-            if (cutText) {
-                document.getElementById('cutTextDisplay').innerText = cutText;
-            }
-        };
     </script>
 </body>
 </html>
