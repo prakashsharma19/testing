@@ -86,6 +86,11 @@
             background-color: #ffa500;
             color: white;
         }
+        hr {
+            border: none;
+            border-top: 1px solid #ccc; /* Thin horizontal line */
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -115,33 +120,29 @@
     <script>
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
-            let entries = inputText.split(/\n\s*\n/);
+            let entries = inputText.split(/\n\s*\n/); // Split by paragraphs
             let output = '';
 
             entries.forEach(entry => {
-                // Remove irrelevant lines (e.g., "View the author's ORCID record")
-                entry = entry.replace(/View the author's ORCID record/gi, '').trim();
+                // Remove "View the author's ORCID record" and any URLs
+                entry = entry.replace(/View the author's ORCID record/gi, '').replace(/https?:\/\/\S+/g, '').trim();
 
-                // Regex patterns for matching Name, Address, and Email
+                // Keep all other content intact, just re-arrange by name, address, and email
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
                 let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
-                let addressPattern = /(.*?(Laboratory|Department|Services|University|Institute|College|Street|Road|Ave|Boulevard|Building)[^,]*.*?,.*?(?:,\s*.*)?)/;
 
-                // Match the patterns
                 let nameMatch = entry.match(namePattern);
                 let emailMatch = entry.match(emailPattern);
-                let addressMatch = entry.match(addressPattern);
-
-                // Build the output for this entry
                 let formattedEntry = '';
+
                 if (nameMatch) formattedEntry += nameMatch[0] + '\n';  // Name
-                if (addressMatch) formattedEntry += addressMatch[0] + '\n';  // Full Address
+                formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '').replace(emailMatch ? emailMatch[0] : '', '').trim() + '\n';  // Address
                 if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';  // Email
 
-                output += formattedEntry + '<hr>\n';  // Add horizontal line for distinction
+                // Output with a thin horizontal line
+                output += formattedEntry + '<hr>\n';
             });
 
-            // Display the result in the output container
             document.getElementById("outputContainer").innerHTML = output;
         }
 
@@ -151,7 +152,7 @@
                 let inputText = document.getElementById("textInput").value;
 
                 // Clean the text from unwanted info
-                inputText = inputText.replace(/View the author's ORCID record/gi, '').trim();
+                inputText = inputText.replace(/View the author's ORCID record/gi, '').replace(/https?:\/\/\S+/g, '').trim();
                 inputText = inputText.replace(/\.\s*\./g, '.');
 
                 // Replace email addresses with mailto links
