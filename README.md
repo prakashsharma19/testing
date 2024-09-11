@@ -88,8 +88,16 @@
         }
         hr {
             border: none;
-            border-top: 1px solid #ccc; /* Thin horizontal line */
+            border-top: 1px solid #ccc;
             margin: 10px 0;
+        }
+        #customRemoveSection {
+            margin-top: 20px;
+        }
+        #customRemoveSection input {
+            padding: 5px;
+            width: 200px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -117,6 +125,13 @@
         <input type="number" id="fontSize" value="18" min="10" max="40" onchange="changeFontSize()">
     </div>
 
+    <!-- Section for removing custom phrases -->
+    <div id="customRemoveSection">
+        <label for="removeText">Enter text to remove:</label>
+        <input type="text" id="removeText" placeholder="Enter text to remove">
+        <button onclick="removeCustomText()">Delete</button>
+    </div>
+
     <script>
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
@@ -124,8 +139,11 @@
             let output = '';
 
             entries.forEach(entry => {
-                // Remove "View the author's ORCID record" and any URLs
-                entry = entry.replace(/View the author's ORCID record/gi, '').replace(/https?:\/\/\S+/g, '').trim();
+                // Remove "View the author's ORCID record", "Corresponding author", and website links
+                entry = entry.replace(/View the author's ORCID record/gi, '')
+                             .replace(/Corresponding author/gi, '')
+                             .replace(/https?:\/\/\S+/g, '')
+                             .trim();
 
                 // Keep all other content intact, just re-arrange by name, address, and email
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
@@ -136,7 +154,9 @@
                 let formattedEntry = '';
 
                 if (nameMatch) formattedEntry += nameMatch[0] + '\n';  // Name
-                formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '').replace(emailMatch ? emailMatch[0] : '', '').trim() + '\n';  // Address
+                formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
+                                       .replace(emailMatch ? emailMatch[0] : '', '')
+                                       .trim() + '\n';  // Address
                 if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';  // Email
 
                 // Output with a thin horizontal line
@@ -152,8 +172,10 @@
                 let inputText = document.getElementById("textInput").value;
 
                 // Clean the text from unwanted info
-                inputText = inputText.replace(/View the author's ORCID record/gi, '').replace(/https?:\/\/\S+/g, '').trim();
-                inputText = inputText.replace(/\.\s*\./g, '.');
+                inputText = inputText.replace(/View the author's ORCID record/gi, '')
+                                     .replace(/Corresponding author/gi, '')
+                                     .replace(/https?:\/\/\S+/g, '')
+                                     .trim();
 
                 // Replace email addresses with mailto links
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
@@ -197,6 +219,13 @@
             navigator.clipboard.writeText(outputText).then(() => {
                 alert('Text copied to clipboard');
             });
+        }
+
+        function removeCustomText() {
+            const textToRemove = document.getElementById("removeText").value;
+            const outputContainer = document.getElementById("outputContainer");
+            outputContainer.innerHTML = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
+            document.getElementById("removeText").value = ''; // Clear input after deletion
         }
     </script>
 </body>
