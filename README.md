@@ -133,6 +133,14 @@
     </div>
 
     <script>
+        // Automatically load saved content from memory
+        window.onload = function () {
+            const savedText = localStorage.getItem('outputContent');
+            if (savedText) {
+                document.getElementById('outputContainer').innerHTML = savedText;
+            }
+        };
+
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
             let entries = inputText.split(/\n\s*\n/); // Split by paragraphs
@@ -159,11 +167,13 @@
                                        .trim() + '\n';  // Address
                 if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';  // Email
 
-                // Output with a thin horizontal line
+                // Horizontal line after email
                 output += formattedEntry + '<hr>\n';
             });
 
+            // Display the result in the output container and save to memory
             document.getElementById("outputContainer").innerHTML = output;
+            localStorage.setItem('outputContent', output);
         }
 
         function cleanText() {
@@ -182,7 +192,9 @@
                     return '<a href="mailto:' + email + '">' + email + '</a>';
                 });
 
+                // Display the result in the output container and save to memory
                 document.getElementById("outputContainer").innerHTML = inputText;
+                localStorage.setItem('outputContent', inputText);
                 document.getElementById("loading").style.display = "none";
             }, 1000);
         }
@@ -225,6 +237,7 @@
             const textToRemove = document.getElementById("removeText").value;
             const outputContainer = document.getElementById("outputContainer");
             outputContainer.innerHTML = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
+            localStorage.setItem('outputContent', outputContainer.innerHTML); // Save updated content
             document.getElementById("removeText").value = ''; // Clear input after deletion
         }
     </script>
