@@ -150,7 +150,7 @@
                 entry = entry.replace(/View the author's ORCID record/gi, '')
                              .replace(/Corresponding author/gi, '')
                              .replace(/https?:\/\/\S+/g, '')
-                             .replace(/\s*[.,]/g, '') // Remove stray punctuation and associated gaps
+                             .replace(/(?<=\s)[.,](?=\s)/g, '') // Remove isolated punctuation
                              .trim();
 
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
@@ -181,7 +181,7 @@
                 inputText = inputText.replace(/View the author's ORCID record/gi, '')
                                      .replace(/Corresponding author/gi, '')
                                      .replace(/https?:\/\/\S+/g, '')
-                                     .replace(/\s*[.,]/g, '') // Remove stray punctuation and associated gaps
+                                     .replace(/(?<=\s)[.,](?=\s)/g, '') // Remove isolated punctuation
                                      .trim();
 
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
@@ -281,7 +281,7 @@
                     );
 
                     if (stopPosition !== Infinity) {
-                        range.setEnd(range.endContainer, stopPosition);
+                        range.setEnd(range.endContainer, stopPosition + 1); // Include the punctuation
                         selection.removeAllRanges();
                         selection.addRange(range);
                     }
@@ -296,7 +296,7 @@
                     );
 
                     if (stopPosition !== -Infinity) {
-                        range.setStart(range.startContainer, stopPosition + 1);
+                        range.setStart(range.startContainer, stopPosition + 1); // Include the punctuation
                         selection.removeAllRanges();
                         selection.addRange(range);
                     }
