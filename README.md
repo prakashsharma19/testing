@@ -289,35 +289,15 @@
                 let content = range.endContainer.textContent;
 
                 if (event.key === 'ArrowRight') {
-                    let nextStop = content.indexOf('.', range.endOffset);
-                    let nextComma = content.indexOf(',', range.endOffset);
-                    let nextLineBreak = content.indexOf('\n', range.endOffset);
-                    let stopPosition = Math.min(
-                        nextStop === -1 ? Infinity : nextStop,
-                        nextComma === -1 ? Infinity : nextComma,
-                        nextLineBreak === -1 ? Infinity : nextLineBreak
-                    );
-
-                    if (stopPosition !== Infinity) {
-                        range.setEnd(range.endContainer, stopPosition); // Do not include the punctuation
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
+                    let stopPosition = content.length; // Allow selection beyond punctuation
+                    range.setEnd(range.endContainer, stopPosition);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
                 } else if (event.key === 'ArrowLeft') {
-                    let prevStop = content.lastIndexOf('.', range.startOffset - 1);
-                    let prevComma = content.lastIndexOf(',', range.startOffset - 1);
-                    let prevLineBreak = content.lastIndexOf('\n', range.startOffset - 1);
-                    let stopPosition = Math.max(
-                        prevStop === -1 ? -Infinity : prevStop,
-                        prevComma === -1 ? -Infinity : prevComma,
-                        prevLineBreak === -1 ? -Infinity : prevLineBreak
-                    );
-
-                    if (stopPosition !== -Infinity) {
-                        range.setStart(range.startContainer, stopPosition); // Do not include the punctuation
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
+                    let startPosition = 0; // Allow selection beyond punctuation
+                    range.setStart(range.startContainer, startPosition);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
                 }
             }
         });
