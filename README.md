@@ -245,62 +245,50 @@
 
                 // Clean the text (remove diacritics)
                 inputText = removeDiacritics(inputText);
-                inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
-                    totalEntries++; // Increment total entries
-                    todaysEntries++; // Increment today's entries one by one for each email cut
-                    return '<a href="mailto:' + email + '">' + email + '</a>';
-                });
 
-                document.getElementById("outputContainer").innerHTML = inputText;
-                localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
-                localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
-                updateEntryDisplay();
+                document.getElementById("outputContainer").innerText = inputText;
+
                 document.getElementById("loading").style.display = "none";
             }, 1000);
         }
 
-        function toggleFullScreen() {
-            const outputContainer = document.getElementById('outputContainer');
-            const fullPageButton = document.getElementById('fullPage');
-            const exitFullScreenButton = document.getElementById('exitFullScreen');
-
-            outputContainer.style.position = 'fixed';
-            outputContainer.style.top = '0';
-            outputContainer.style.left = '0';
-            outputContainer.style.width = '100vw';
-            outputContainer.style.height = '100vh';
-            outputContainer.style.zIndex = '1000';
-            document.body.style.overflow = 'hidden';
-
-            fullPageButton.style.display = 'none';
-            exitFullScreenButton.style.display = 'block';
-
-            // Ensure the entry count is visible in full screen
-            document.getElementById("entryCount").style.position = "fixed";
-            document.getElementById("todaysEntry").style.position = "fixed";
-        }
-
-        function exitFullScreen() {
-            const outputContainer = document.getElementById('outputContainer');
-            const fullPageButton = document.getElementById('fullPage');
-            const exitFullScreenButton = document.getElementById('exitFullScreen');
-
-            outputContainer.style.position = 'relative';
-            outputContainer.style.height = '500px';
-            outputContainer.style.width = '100%';
-            outputContainer.style.top = 'initial';
-            outputContainer.style.left = 'initial';
-            outputContainer.style.zIndex = 'initial';
-            document.body.style.overflow = 'auto';
-
-            fullPageButton.style.display = 'block';
-            exitFullScreenButton.style.display = 'none';
+        function copyText() {
+            const outputContainer = document.getElementById("outputContainer");
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(outputContainer);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            document.execCommand("copy");
+            alert("Text copied to clipboard");
         }
 
         function toggleLock() {
             const outputContainer = document.getElementById("outputContainer");
-            outputContainer.contentEditable = outputContainer.contentEditable === "true" ? "false" : "true";
-            document.querySelector('.lock').classList.toggle('locked');
+            const lockButton = document.querySelector('.lock');
+            if (outputContainer.contentEditable === "true") {
+                outputContainer.contentEditable = "false";
+                lockButton.classList.add("locked");
+                lockButton.textContent = "Unlock";
+            } else {
+                outputContainer.contentEditable = "true";
+                lockButton.classList.remove("locked");
+                lockButton.textContent = "Lock";
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                document.getElementById("exitFullScreen").style.display = "block";
+            }
+        }
+
+        function exitFullScreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+                document.getElementById("exitFullScreen").style.display = "none";
+            }
         }
 
         function changeFont() {
@@ -309,116 +297,40 @@
         }
 
         function changeFontSize() {
-            const size = document.getElementById("fontSize").value;
-            document.getElementById("outputContainer").style.fontSize = size + 'px';
-        }
-
-        function copyText() {
-            const outputText = document.getElementById("outputContainer").innerText;
-            navigator.clipboard.writeText(outputText).then(() => {
-                alert('Text copied to clipboard');
-            });
+            const fontSize = document.getElementById("fontSize").value;
+            document.getElementById("outputContainer").style.fontSize = fontSize + "px";
         }
 
         function removeCustomText() {
             const textToRemove = document.getElementById("removeText").value;
             const outputContainer = document.getElementById("outputContainer");
-            outputContainer.innerHTML = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
-            localStorage.setItem('outputContent', outputContainer.innerHTML);
-            document.getElementById("removeText").value = '';
+            const outputText = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
+            outputContainer.innerHTML = outputText;
         }
 
-        // Ctrl+Q to jump to next email
-        document.addEventListener('keydown', function(event) {
-            if (event.ctrlKey && event.key === 'q') {
-                let emails = document.querySelectorAll('#outputContainer a[href^="mailto:"]');
-                let currentSelection = window.getSelection().anchorNode;
-                let nextEmail = null;
-
-                for (let i = 0; i < emails.length; i++) {
-                    if (currentSelection && emails[i].contains(currentSelection)) {
-                        nextEmail = emails[i + 1] || emails[0];
-                        break;
-                    }
-                }
-
-                if (!nextEmail) nextEmail = emails[0];
-
-                if (nextEmail) {
-                    let range = document.createRange();
-                    range.selectNode(nextEmail);
-                    window.getSelection().removeAllRanges();
-                    window.getSelection().addRange(range);
-                    nextEmail.scrollIntoView({ behavior: 'smooth', block: 'center' }); // Smooth scroll to the next email
-                }
-                event.preventDefault();
+        // Add "Professor" when "q" is pressed
+        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
+            if (event.key === 'q') {
+                event.preventDefault(); // Prevent the default "q" input
+                insertProfessorAtCaret();
             }
         });
 
-        // Modify text selection to select until a comma, full stop, or end of line
-        document.addEventListener('keydown', function(event) {
-            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
-                event.preventDefault();
-                let selection = window.getSelection();
-                let range = selection.getRangeAt(0);
-                let content = range.endContainer.textContent;
+        function insertProfessorAtCaret() {
+            const outputContainer = document.getElementById('outputContainer');
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
 
-                let punctuationRegex = /[.,]/g;
-                let match;
-                let stopPosition = content.length;
-                let nextMove = false;
-                let extended = false;
+            // Insert "Professor" at the current caret position
+            const textNode = document.createTextNode('Professor ');
+            range.insertNode(textNode);
 
-                if (event.key === 'ArrowRight') {
-                    punctuationRegex.lastIndex = range.endOffset;
-                    match = punctuationRegex.exec(content);
-
-                    if (!extended && match && match.index > range.endOffset) {
-                        stopPosition = match.index; // Stop before punctuation
-                        nextMove = true;
-                    } else if (nextMove && match) {
-                        stopPosition = match.index + 1; // Include punctuation in selection
-                        nextMove = false;
-                        extended = true; // Mark as extended
-                    } else if (extended) {
-                        // Move to the next punctuation and stop before it again
-                        punctuationRegex.lastIndex = stopPosition;
-                        match = punctuationRegex.exec(content);
-                        if (match) {
-                            stopPosition = match.index; // Stop before next punctuation
-                        }
-                        extended = false; // Reset
-                    }
-
-                    range.setEnd(range.endContainer, stopPosition);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                } else if (event.key === 'ArrowLeft') {
-                    match = punctuationRegex.exec(content.slice(0, range.startOffset));
-
-                    if (!extended && match && match.index < range.startOffset) {
-                        stopPosition = match.index; // Stop before punctuation
-                        nextMove = true;
-                    } else if (nextMove && match) {
-                        stopPosition = match.index + 1; // Include punctuation in selection
-                        nextMove = false;
-                        extended = true; // Mark as extended
-                    } else if (extended) {
-                        // Move to the next punctuation and stop before it again
-                        punctuationRegex.lastIndex = stopPosition;
-                        match = punctuationRegex.exec(content.slice(0, range.startOffset));
-                        if (match) {
-                            stopPosition = match.index; // Stop before next punctuation
-                        }
-                        extended = false; // Reset
-                    }
-
-                    range.setStart(range.startContainer, stopPosition);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                }
-            }
-        });
+            // Move the caret to after the inserted text
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
     </script>
 </body>
 </html>
