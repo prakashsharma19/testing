@@ -310,7 +310,7 @@
 
         // Add "Professor" when "q" is pressed
         document.getElementById('outputContainer').addEventListener('keydown', function(event) {
-            if (event.key === 'q') {
+            if (event.key === 'qq') {
                 event.preventDefault(); // Prevent the default "q" input
                 insertProfessorAtCaret();
             }
