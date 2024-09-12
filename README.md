@@ -93,6 +93,14 @@
             background-color: #ffa500;
             color: white;
         }
+        #entryCount {
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
         hr {
             border: none;
             border-top: 1px solid #ccc;
@@ -108,7 +116,7 @@
         }
         .highlight {
             background-color: yellow;
-            font-weight: regular;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -122,6 +130,7 @@
     <button class="lock" onclick="toggleLock()">Lock</button>
     <button id="fullPage" onclick="toggleFullScreen()">Full Screen</button>
     <button id="exitFullScreen" onclick="exitFullScreen()">Exit Full Screen</button>
+    <div id="entryCount">Entries: 0</div>
     <br><br>
     <div id="outputContainer" contenteditable="true"></div>
 
@@ -145,12 +154,19 @@
     </div>
 
     <script>
+        let entryCount = 0;
+
         // Define special characters and their replacements
         const specialChars = {
             'À': 'A', 'á': 'a', 'â': 'a', 'ç': 'c', 'ê': 'e', 
             'É': 'E', 'È': 'E', 'Ì': 'I', 'î': 'i', 'í': 'i', 
             'Ò': 'O', 'ô': 'o', 'ó': 'o', 'Ù': 'U'
         };
+
+        // Remove highlight span tags when copying or selecting text
+        function removeHighlightTags(text) {
+            return text.replace(/<span class="highlight">/g, '').replace(/<\/span>/g, '');
+        }
 
         function highlightReplacements(text) {
             return text.replace(/[ÀáâçêÉÈÌîíÒôóÙ]/g, match => {
@@ -159,10 +175,15 @@
             });
         }
 
+        function updateEntryCount(count) {
+            document.getElementById("entryCount").textContent = `Entries: ${count}`;
+        }
+
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
             let entries = inputText.split(/\n\s*\n/);
             let output = '';
+            entryCount = 0;
 
             entries.forEach(entry => {
                 entry = entry.replace(/View the author's ORCID record/gi, '')
@@ -186,13 +207,16 @@
                 formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
                                        .replace(emailMatch ? emailMatch[0] : '', '')
                                        .trim() + '<br>';
-                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
+                if (emailMatch) {
+                    formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
+                    entryCount++; // Increment the entry count for each email match
+                }
 
-                output += formattedEntry + '<br>'; // Removed horizontal line
+                output += formattedEntry + '<br>';
             });
 
             document.getElementById("outputContainer").innerHTML = output;
-            localStorage.setItem('outputContent', output);
+            updateEntryCount(entryCount);
         }
 
         function cleanText() {
@@ -208,13 +232,13 @@
                                      .trim();
 
                 inputText = highlightReplacements(inputText);
-
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
+                    entryCount++; // Increment the entry count for each email match
                     return '<a href="mailto:' + email + '">' + email + '</a>';
                 });
 
                 document.getElementById("outputContainer").innerHTML = inputText;
-                localStorage.setItem('outputContent', inputText);
+                updateEntryCount(entryCount);
                 document.getElementById("loading").style.display = "none";
             }, 1000);
         }
@@ -234,6 +258,9 @@
 
             fullPageButton.style.display = 'none';
             exitFullScreenButton.style.display = 'block';
+
+            // Ensure the entry count is visible in full screen
+            document.getElementById("entryCount").style.position = "fixed";
         }
 
         function exitFullScreen() {
@@ -337,7 +364,7 @@
                         nextMove = false;
                         extended = true; // Mark as extended
                     } else if (extended) {
-                        // Move to the next comma/period and stop before it again
+                        // Move to the next punctuation and stop before it again
                         punctuationRegex.lastIndex = stopPosition;
                         match = punctuationRegex.exec(content);
                         if (match) {
