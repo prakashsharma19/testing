@@ -119,7 +119,6 @@
         }
         .highlight {
             background-color: yellow;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -187,19 +186,9 @@
         resetTodaysEntryIfNewDay();
         updateEntryDisplay();
 
-        // Define special characters and their replacements
-        const specialChars = {
-            'À': 'A', 'á': 'a', 'â': 'a', 'ç': 'c', 'ê': 'e', 
-            'É': 'E', 'È': 'E', 'Ì': 'I', 'î': 'i', 'í': 'i', 
-            'Ò': 'O', 'ô': 'o', 'ó': 'o', 'Ù': 'U'
-        };
-
-        // Highlight replacements via a CSS class, no extra DOM elements
-        function highlightReplacements(text) {
-            return text.replace(/[ÀáâçêÉÈÌîíÒôóÙ]/g, match => {
-                const replacement = specialChars[match] || match;
-                return `<span class="highlight">${replacement}</span>`;
-            });
+        // Helper function to clean special characters (remove diacritics)
+        function removeDiacritics(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
         function advancedFixText() {
@@ -215,8 +204,8 @@
                              .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
                              .trim();
 
-                // Highlight special characters and replace with regular text
-                entry = highlightReplacements(entry);
+                // Clean the text (remove diacritics)
+                entry = removeDiacritics(entry);
 
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
                 let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
@@ -232,7 +221,6 @@
                 if (emailMatch) {
                     formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
                     totalEntries++; // Increment total entries
-                    todaysEntries++; // Increment today's entries
                 }
 
                 output += formattedEntry + '<br>';
@@ -240,7 +228,6 @@
 
             document.getElementById("outputContainer").innerHTML = output;
             localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
-            localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
             updateEntryDisplay();
         }
 
@@ -256,10 +243,11 @@
                                      .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
                                      .trim();
 
-                inputText = highlightReplacements(inputText);
+                // Clean the text (remove diacritics)
+                inputText = removeDiacritics(inputText);
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
                     totalEntries++; // Increment total entries
-                    todaysEntries++; // Increment today's entries
+                    todaysEntries++; // Increment today's entries one by one for each email cut
                     return '<a href="mailto:' + email + '">' + email + '</a>';
                 });
 
