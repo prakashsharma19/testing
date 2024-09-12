@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -133,7 +134,6 @@
     </div>
 
     <script>
-        // Automatically load saved content from memory
         window.onload = function () {
             const savedText = localStorage.getItem('outputContent');
             if (savedText) {
@@ -143,17 +143,16 @@
 
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
-            let entries = inputText.split(/\n\s*\n/); // Split by paragraphs
+            let entries = inputText.split(/\n\s*\n/);
             let output = '';
 
             entries.forEach(entry => {
-                // Remove "View the author's ORCID record", "Corresponding author", and website links
                 entry = entry.replace(/View the author's ORCID record/gi, '')
                              .replace(/Corresponding author/gi, '')
                              .replace(/https?:\/\/\S+/g, '')
+                             .replace(/\s+[.,]/g, '')  // Remove stray punctuation
                              .trim();
 
-                // Keep all other content intact, just re-arrange by name, address, and email
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
                 let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
 
@@ -161,17 +160,15 @@
                 let emailMatch = entry.match(emailPattern);
                 let formattedEntry = '';
 
-                if (nameMatch) formattedEntry += nameMatch[0] + '\n';  // Name
+                if (nameMatch) formattedEntry += nameMatch[0] + '\n';
                 formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
                                        .replace(emailMatch ? emailMatch[0] : '', '')
-                                       .trim() + '\n';  // Address
-                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';  // Email
+                                       .trim() + '\n';
+                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';
 
-                // Horizontal line after email
-                output += formattedEntry + '<hr>\n';
+                output += formattedEntry + '\n'; // Removed horizontal line
             });
 
-            // Display the result in the output container and save to memory
             document.getElementById("outputContainer").innerHTML = output;
             localStorage.setItem('outputContent', output);
         }
@@ -181,24 +178,23 @@
             setTimeout(() => {
                 let inputText = document.getElementById("textInput").value;
 
-                // Clean the text from unwanted info
                 inputText = inputText.replace(/View the author's ORCID record/gi, '')
                                      .replace(/Corresponding author/gi, '')
                                      .replace(/https?:\/\/\S+/g, '')
+                                     .replace(/\s+[.,]/g, '')  // Remove stray punctuation
                                      .trim();
 
-                // Replace email addresses with mailto links
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
                     return '<a href="mailto:' + email + '">' + email + '</a>';
                 });
 
-                // Display the result in the output container and save to memory
                 document.getElementById("outputContainer").innerHTML = inputText;
                 localStorage.setItem('outputContent', inputText);
                 document.getElementById("loading").style.display = "none";
             }, 1000);
         }
 
+        // Toggle full screen
         function toggleFullScreen() {
             const outputContainer = document.getElementById('outputContainer');
             if (outputContainer.style.height === '100vh') {
@@ -210,6 +206,7 @@
             }
         }
 
+        // Lock/Unlock content editable area
         function toggleLock() {
             const outputContainer = document.getElementById("outputContainer");
             outputContainer.contentEditable = outputContainer.contentEditable === "true" ? "false" : "true";
@@ -237,9 +234,65 @@
             const textToRemove = document.getElementById("removeText").value;
             const outputContainer = document.getElementById("outputContainer");
             outputContainer.innerHTML = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
-            localStorage.setItem('outputContent', outputContainer.innerHTML); // Save updated content
-            document.getElementById("removeText").value = ''; // Clear input after deletion
+            localStorage.setItem('outputContent', outputContainer.innerHTML);
+            document.getElementById("removeText").value = '';
         }
+
+        // Listen for Ctrl+Q to jump to next email
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'q') {
+                let emails = document.querySelectorAll('#outputContainer a[href^="mailto:"]');
+                let currentSelection = window.getSelection().anchorNode;
+                let nextEmail = null;
+
+                for (let i = 0; i < emails.length; i++) {
+                    if (currentSelection && emails[i].contains(currentSelection)) {
+                        nextEmail = emails[i + 1] || emails[0];
+                        break;
+                    }
+                }
+
+                if (!nextEmail) nextEmail = emails[0];
+                
+                if (nextEmail) {
+                    let range = document.createRange();
+                    range.selectNode(nextEmail);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                }
+                event.preventDefault();
+            }
+        });
+
+        // Modify text selection to select until a comma or full stop
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+                event.preventDefault();
+                let selection = window.getSelection();
+                let range = selection.getRangeAt(0);
+                let content = range.endContainer.textContent;
+
+                if (event.key === 'ArrowRight') {
+                    let nextStop = content.indexOf('.', range.endOffset);
+                    let nextComma = content.indexOf(',', range.endOffset);
+                    let stopPosition = nextStop === -1 ? nextComma : Math.min(nextStop, nextComma);
+                    if (stopPosition !== -1) {
+                        range.setEnd(range.endContainer, stopPosition + 1);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                } else if (event.key === 'ArrowLeft') {
+                    let prevStop = content.lastIndexOf('.', range.startOffset - 1);
+                    let prevComma = content.lastIndexOf(',', range.startOffset - 1);
+                    let stopPosition = prevStop === -1 ? prevComma : Math.max(prevStop, prevComma);
+                    if (stopPosition !== -1) {
+                        range.setStart(range.startContainer, stopPosition + 1);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
