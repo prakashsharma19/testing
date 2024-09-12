@@ -77,7 +77,7 @@
         #fontOptions {
             margin-top: 10px;
         }
-        #fullPage {
+        #fullPage, #exitFullScreen {
             position: absolute;
             top: 10px;
             left: 20px;
@@ -113,7 +113,8 @@
     <button class="blue" onclick="advancedFixText()">Advanced Fix</button>
     <button id="copyButton" onclick="copyText()">Copy</button>
     <button class="lock" onclick="toggleLock()">Lock</button>
-    <button id="fullPage" onclick="toggleFullScreen()">Full Page</button>
+    <button id="fullPage" onclick="toggleFullScreen()">Full Screen</button>
+    <button id="exitFullScreen" style="display:none;" onclick="exitFullScreen()">Exit Full Screen</button>
     <br><br>
     <div id="outputContainer" contenteditable="true"></div>
 
@@ -213,27 +214,36 @@
 
         function toggleFullScreen() {
             const outputContainer = document.getElementById('outputContainer');
-            const isFullScreen = outputContainer.style.position === 'fixed';
+            const fullPageButton = document.getElementById('fullPage');
+            const exitFullScreenButton = document.getElementById('exitFullScreen');
 
-            if (isFullScreen) {
-                // Restore original size
-                outputContainer.style.position = 'relative';
-                outputContainer.style.height = '500px';
-                outputContainer.style.width = '100%';
-                outputContainer.style.top = 'initial';
-                outputContainer.style.left = 'initial';
-                outputContainer.style.zIndex = 'initial';
-                document.body.style.overflow = 'auto'; // Allow scrolling again
-            } else {
-                // Fullscreen mode
-                outputContainer.style.position = 'fixed';
-                outputContainer.style.height = '100vh';
-                outputContainer.style.width = '100vw';
-                outputContainer.style.top = '0';
-                outputContainer.style.left = '0';
-                outputContainer.style.zIndex = '1000'; // Bring to front
-                document.body.style.overflow = 'hidden'; // Disable body scrolling
-            }
+            outputContainer.style.position = 'fixed';
+            outputContainer.style.top = '0';
+            outputContainer.style.left = '0';
+            outputContainer.style.width = '100vw';
+            outputContainer.style.height = '100vh';
+            outputContainer.style.zIndex = '1000';
+            document.body.style.overflow = 'hidden';
+
+            fullPageButton.style.display = 'none';
+            exitFullScreenButton.style.display = 'block';
+        }
+
+        function exitFullScreen() {
+            const outputContainer = document.getElementById('outputContainer');
+            const fullPageButton = document.getElementById('fullPage');
+            const exitFullScreenButton = document.getElementById('exitFullScreen');
+
+            outputContainer.style.position = 'relative';
+            outputContainer.style.height = '500px';
+            outputContainer.style.width = '100%';
+            outputContainer.style.top = 'initial';
+            outputContainer.style.left = 'initial';
+            outputContainer.style.zIndex = 'initial';
+            document.body.style.overflow = 'auto';
+
+            fullPageButton.style.display = 'block';
+            exitFullScreenButton.style.display = 'none';
         }
 
         function toggleLock() {
@@ -304,29 +314,27 @@
 
                 let punctuationRegex = /[.,]/g;
                 let match;
+                let stopPosition = content.length;
 
                 if (event.key === 'ArrowRight') {
-                    let stopPosition = content.length;
                     punctuationRegex.lastIndex = range.endOffset;
                     match = punctuationRegex.exec(content);
 
-                    if (match) {
-                        stopPosition = match.index;
+                    if (match && match.index > range.endOffset) {
+                        stopPosition = match.index + 1; // Include punctuation
                     }
 
                     range.setEnd(range.endContainer, stopPosition);
                     selection.removeAllRanges();
                     selection.addRange(range);
-
                 } else if (event.key === 'ArrowLeft') {
-                    let startPosition = 0;
                     match = punctuationRegex.exec(content.slice(0, range.startOffset));
 
                     if (match) {
-                        startPosition = match.index + 1;
+                        stopPosition = match.index;
                     }
 
-                    range.setStart(range.startContainer, startPosition);
+                    range.setStart(range.startContainer, stopPosition);
                     selection.removeAllRanges();
                     selection.addRange(range);
                 }
