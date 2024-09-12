@@ -108,7 +108,7 @@
         }
         .highlight {
             background-color: yellow;
-            font-weight: bold;
+            font-weight: regular;
         }
     </style>
 </head>
