@@ -77,10 +77,17 @@
         #fontOptions {
             margin-top: 10px;
         }
-        #fullPage, #exitFullScreen {
+        #fullPage {
             position: absolute;
             top: 10px;
             left: 20px;
+        }
+        #exitFullScreen {
+            display: none;
+            position: fixed;
+            bottom: 10px;
+            right: 20px;
+            z-index: 1001;
         }
         #copyButton {
             background-color: #ffa500;
@@ -114,7 +121,7 @@
     <button id="copyButton" onclick="copyText()">Copy</button>
     <button class="lock" onclick="toggleLock()">Lock</button>
     <button id="fullPage" onclick="toggleFullScreen()">Full Screen</button>
-    <button id="exitFullScreen" style="display:none;" onclick="exitFullScreen()">Exit Full Screen</button>
+    <button id="exitFullScreen" onclick="exitFullScreen()">Exit Full Screen</button>
     <br><br>
     <div id="outputContainer" contenteditable="true"></div>
 
@@ -315,13 +322,18 @@
                 let punctuationRegex = /[.,]/g;
                 let match;
                 let stopPosition = content.length;
+                let nextMove = false;
 
                 if (event.key === 'ArrowRight') {
                     punctuationRegex.lastIndex = range.endOffset;
                     match = punctuationRegex.exec(content);
 
-                    if (match && match.index > range.endOffset) {
-                        stopPosition = match.index + 1; // Include punctuation
+                    if (match && match.index > range.endOffset && !nextMove) {
+                        stopPosition = match.index; // Stop before punctuation
+                        nextMove = true;
+                    } else if (nextMove) {
+                        stopPosition = match.index + 1; // Include punctuation in selection
+                        nextMove = false; // Reset
                     }
 
                     range.setEnd(range.endContainer, stopPosition);
@@ -330,8 +342,12 @@
                 } else if (event.key === 'ArrowLeft') {
                     match = punctuationRegex.exec(content.slice(0, range.startOffset));
 
-                    if (match) {
-                        stopPosition = match.index;
+                    if (match && match.index < range.startOffset && !nextMove) {
+                        stopPosition = match.index; // Stop before punctuation
+                        nextMove = true;
+                    } else if (nextMove) {
+                        stopPosition = match.index; // Include punctuation in selection
+                        nextMove = false; // Reset
                     }
 
                     range.setStart(range.startContainer, stopPosition);
