@@ -213,12 +213,26 @@
 
         function toggleFullScreen() {
             const outputContainer = document.getElementById('outputContainer');
-            if (outputContainer.style.height === '100vh') {
+            const isFullScreen = outputContainer.style.position === 'fixed';
+
+            if (isFullScreen) {
+                // Restore original size
+                outputContainer.style.position = 'relative';
                 outputContainer.style.height = '500px';
-                document.body.style.overflow = 'auto';
+                outputContainer.style.width = '100%';
+                outputContainer.style.top = 'initial';
+                outputContainer.style.left = 'initial';
+                outputContainer.style.zIndex = 'initial';
+                document.body.style.overflow = 'auto'; // Allow scrolling again
             } else {
+                // Fullscreen mode
+                outputContainer.style.position = 'fixed';
                 outputContainer.style.height = '100vh';
-                document.body.style.overflow = 'hidden';
+                outputContainer.style.width = '100vw';
+                outputContainer.style.top = '0';
+                outputContainer.style.left = '0';
+                outputContainer.style.zIndex = '1000'; // Bring to front
+                document.body.style.overflow = 'hidden'; // Disable body scrolling
             }
         }
 
@@ -288,13 +302,30 @@
                 let range = selection.getRangeAt(0);
                 let content = range.endContainer.textContent;
 
+                let punctuationRegex = /[.,]/g;
+                let match;
+
                 if (event.key === 'ArrowRight') {
-                    let stopPosition = content.length; // Allow selection beyond punctuation
+                    let stopPosition = content.length;
+                    punctuationRegex.lastIndex = range.endOffset;
+                    match = punctuationRegex.exec(content);
+
+                    if (match) {
+                        stopPosition = match.index;
+                    }
+
                     range.setEnd(range.endContainer, stopPosition);
                     selection.removeAllRanges();
                     selection.addRange(range);
+
                 } else if (event.key === 'ArrowLeft') {
-                    let startPosition = 0; // Allow selection beyond punctuation
+                    let startPosition = 0;
+                    match = punctuationRegex.exec(content.slice(0, range.startOffset));
+
+                    if (match) {
+                        startPosition = match.index + 1;
+                    }
+
                     range.setStart(range.startContainer, startPosition);
                     selection.removeAllRanges();
                     selection.addRange(range);
