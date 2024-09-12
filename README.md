@@ -108,7 +108,7 @@
         }
         .highlight {
             background-color: yellow;
-            font-weight: regular;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -323,17 +323,27 @@
                 let match;
                 let stopPosition = content.length;
                 let nextMove = false;
+                let extended = false;
 
                 if (event.key === 'ArrowRight') {
                     punctuationRegex.lastIndex = range.endOffset;
                     match = punctuationRegex.exec(content);
 
-                    if (match && match.index > range.endOffset && !nextMove) {
+                    if (!extended && match && match.index > range.endOffset) {
                         stopPosition = match.index; // Stop before punctuation
                         nextMove = true;
-                    } else if (nextMove) {
+                    } else if (nextMove && match) {
                         stopPosition = match.index + 1; // Include punctuation in selection
-                        nextMove = false; // Reset
+                        nextMove = false;
+                        extended = true; // Mark as extended
+                    } else if (extended) {
+                        // Move to the next comma/period and stop before it again
+                        punctuationRegex.lastIndex = stopPosition;
+                        match = punctuationRegex.exec(content);
+                        if (match) {
+                            stopPosition = match.index; // Stop before next punctuation
+                        }
+                        extended = false; // Reset
                     }
 
                     range.setEnd(range.endContainer, stopPosition);
@@ -342,12 +352,21 @@
                 } else if (event.key === 'ArrowLeft') {
                     match = punctuationRegex.exec(content.slice(0, range.startOffset));
 
-                    if (match && match.index < range.startOffset && !nextMove) {
+                    if (!extended && match && match.index < range.startOffset) {
                         stopPosition = match.index; // Stop before punctuation
                         nextMove = true;
-                    } else if (nextMove) {
-                        stopPosition = match.index; // Include punctuation in selection
-                        nextMove = false; // Reset
+                    } else if (nextMove && match) {
+                        stopPosition = match.index + 1; // Include punctuation in selection
+                        nextMove = false;
+                        extended = true; // Mark as extended
+                    } else if (extended) {
+                        // Move to the next punctuation and stop before it again
+                        punctuationRegex.lastIndex = stopPosition;
+                        match = punctuationRegex.exec(content.slice(0, range.startOffset));
+                        if (match) {
+                            stopPosition = match.index; // Stop before next punctuation
+                        }
+                        extended = false; // Reset
                     }
 
                     range.setStart(range.startContainer, stopPosition);
