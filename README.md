@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -100,6 +99,10 @@
             width: 200px;
             font-size: 14px;
         }
+        .highlight {
+            background-color: yellow;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -134,12 +137,19 @@
     </div>
 
     <script>
-        window.onload = function () {
-            const savedText = localStorage.getItem('outputContent');
-            if (savedText) {
-                document.getElementById('outputContainer').innerHTML = savedText;
-            }
+        // Define special characters and their replacements
+        const specialChars = {
+            'À': 'A', 'á': 'a', 'â': 'a', 'ç': 'c', 'ê': 'e', 
+            'É': 'E', 'È': 'E', 'Ì': 'I', 'î': 'i', 'í': 'i', 
+            'Ò': 'O', 'ô': 'o', 'ó': 'o', 'Ù': 'U'
         };
+
+        function highlightReplacements(text) {
+            return text.replace(/[ÀáâçêÉÈÌîíÒôóÙ]/g, match => {
+                const replacement = specialChars[match] || match;
+                return `<span class="highlight">${replacement}</span>`;
+            });
+        }
 
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
@@ -154,6 +164,9 @@
                              .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
                              .trim();
 
+                // Highlight special characters and replace with regular text
+                entry = highlightReplacements(entry);
+
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
                 let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
 
@@ -161,13 +174,13 @@
                 let emailMatch = entry.match(emailPattern);
                 let formattedEntry = '';
 
-                if (nameMatch) formattedEntry += nameMatch[0] + '\n';
+                if (nameMatch) formattedEntry += nameMatch[0] + '<br>';
                 formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
                                        .replace(emailMatch ? emailMatch[0] : '', '')
-                                       .trim() + '\n';
-                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a>\n';
+                                       .trim() + '<br>';
+                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
 
-                output += formattedEntry + '\n'; // Removed horizontal line
+                output += formattedEntry + '<br>'; // Removed horizontal line
             });
 
             document.getElementById("outputContainer").innerHTML = output;
@@ -185,6 +198,8 @@
                                      .replace(/(?<=\s)[.,](?=\s)/g, '') // Remove isolated punctuation
                                      .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
                                      .trim();
+
+                inputText = highlightReplacements(inputText);
 
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
                     return '<a href="mailto:' + email + '">' + email + '</a>';
@@ -253,7 +268,7 @@
                 }
 
                 if (!nextEmail) nextEmail = emails[0];
-                
+
                 if (nextEmail) {
                     let range = document.createRange();
                     range.selectNode(nextEmail);
