@@ -116,7 +116,7 @@
         }
         .highlight {
             background-color: yellow;
-            font-weight: regular;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -163,20 +163,16 @@
             'Ò': 'O', 'ô': 'o', 'ó': 'o', 'Ù': 'U'
         };
 
-        // Remove highlight span tags when copying or selecting text
-        function removeHighlightTags(text) {
-            return text.replace(/<span class="highlight">/g, '').replace(/<\/span>/g, '');
+        function updateEntryCount(count) {
+            document.getElementById("entryCount").textContent = `Entries: ${count}`;
         }
 
+        // Highlight replacements via a CSS class, no extra DOM elements
         function highlightReplacements(text) {
             return text.replace(/[ÀáâçêÉÈÌîíÒôóÙ]/g, match => {
                 const replacement = specialChars[match] || match;
                 return `<span class="highlight">${replacement}</span>`;
             });
-        }
-
-        function updateEntryCount(count) {
-            document.getElementById("entryCount").textContent = `Entries: ${count}`;
         }
 
         function advancedFixText() {
