@@ -93,13 +93,16 @@
             background-color: #ffa500;
             color: white;
         }
-        #entryCount {
+        #entryCount, #todaysEntry {
             position: fixed;
             top: 10px;
             right: 20px;
             font-size: 18px;
             font-weight: bold;
             color: #333;
+        }
+        #todaysEntry {
+            top: 40px;
         }
         hr {
             border: none;
@@ -130,7 +133,8 @@
     <button class="lock" onclick="toggleLock()">Lock</button>
     <button id="fullPage" onclick="toggleFullScreen()">Full Screen</button>
     <button id="exitFullScreen" onclick="exitFullScreen()">Exit Full Screen</button>
-    <div id="entryCount">Entries: 0</div>
+    <div id="entryCount">Total Entries: 0</div>
+    <div id="todaysEntry">Today's Entries: 0</div>
     <br><br>
     <div id="outputContainer" contenteditable="true"></div>
 
@@ -154,7 +158,34 @@
     </div>
 
     <script>
-        let entryCount = 0;
+        // LocalStorage keys
+        const TOTAL_ENTRIES_KEY = 'totalEntries';
+        const TODAYS_ENTRIES_KEY = 'todaysEntries';
+        const LAST_UPDATED_DATE_KEY = 'lastUpdatedDate';
+
+        let totalEntries = parseInt(localStorage.getItem(TOTAL_ENTRIES_KEY)) || 0;
+        let todaysEntries = parseInt(localStorage.getItem(TODAYS_ENTRIES_KEY)) || 0;
+        let lastUpdatedDate = localStorage.getItem(LAST_UPDATED_DATE_KEY) || new Date().toDateString();
+
+        // Check if it's a new day and reset today's entry if needed
+        function resetTodaysEntryIfNewDay() {
+            const currentDate = new Date().toDateString();
+            if (currentDate !== lastUpdatedDate) {
+                todaysEntries = 0;
+                lastUpdatedDate = currentDate;
+                localStorage.setItem(LAST_UPDATED_DATE_KEY, currentDate);
+                localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
+            }
+        }
+
+        // Update the UI with the current counts
+        function updateEntryDisplay() {
+            document.getElementById("entryCount").textContent = `Total Entries: ${totalEntries}`;
+            document.getElementById("todaysEntry").textContent = `Today's Entries: ${todaysEntries}`;
+        }
+
+        resetTodaysEntryIfNewDay();
+        updateEntryDisplay();
 
         // Define special characters and their replacements
         const specialChars = {
@@ -162,10 +193,6 @@
             'É': 'E', 'È': 'E', 'Ì': 'I', 'î': 'i', 'í': 'i', 
             'Ò': 'O', 'ô': 'o', 'ó': 'o', 'Ù': 'U'
         };
-
-        function updateEntryCount(count) {
-            document.getElementById("entryCount").textContent = `Entries: ${count}`;
-        }
 
         // Highlight replacements via a CSS class, no extra DOM elements
         function highlightReplacements(text) {
@@ -179,7 +206,6 @@
             let inputText = document.getElementById("textInput").value;
             let entries = inputText.split(/\n\s*\n/);
             let output = '';
-            entryCount = 0;
 
             entries.forEach(entry => {
                 entry = entry.replace(/View the author's ORCID record/gi, '')
@@ -205,14 +231,17 @@
                                        .trim() + '<br>';
                 if (emailMatch) {
                     formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
-                    entryCount++; // Increment the entry count for each email match
+                    totalEntries++; // Increment total entries
+                    todaysEntries++; // Increment today's entries
                 }
 
                 output += formattedEntry + '<br>';
             });
 
             document.getElementById("outputContainer").innerHTML = output;
-            updateEntryCount(entryCount);
+            localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
+            localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
+            updateEntryDisplay();
         }
 
         function cleanText() {
@@ -229,12 +258,15 @@
 
                 inputText = highlightReplacements(inputText);
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
-                    entryCount++; // Increment the entry count for each email match
+                    totalEntries++; // Increment total entries
+                    todaysEntries++; // Increment today's entries
                     return '<a href="mailto:' + email + '">' + email + '</a>';
                 });
 
                 document.getElementById("outputContainer").innerHTML = inputText;
-                updateEntryCount(entryCount);
+                localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
+                localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
+                updateEntryDisplay();
                 document.getElementById("loading").style.display = "none";
             }, 1000);
         }
@@ -257,6 +289,7 @@
 
             // Ensure the entry count is visible in full screen
             document.getElementById("entryCount").style.position = "fixed";
+            document.getElementById("todaysEntry").style.position = "fixed";
         }
 
         function exitFullScreen() {
