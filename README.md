@@ -150,7 +150,7 @@
                 entry = entry.replace(/View the author's ORCID record/gi, '')
                              .replace(/Corresponding author/gi, '')
                              .replace(/https?:\/\/\S+/g, '')
-                             .replace(/\s+[.,]/g, '')  // Remove stray punctuation
+                             .replace(/\s*[.,]/g, '') // Remove stray punctuation and associated gaps
                              .trim();
 
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
@@ -181,7 +181,7 @@
                 inputText = inputText.replace(/View the author's ORCID record/gi, '')
                                      .replace(/Corresponding author/gi, '')
                                      .replace(/https?:\/\/\S+/g, '')
-                                     .replace(/\s+[.,]/g, '')  // Remove stray punctuation
+                                     .replace(/\s*[.,]/g, '') // Remove stray punctuation and associated gaps
                                      .trim();
 
                 inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
@@ -194,7 +194,6 @@
             }, 1000);
         }
 
-        // Toggle full screen
         function toggleFullScreen() {
             const outputContainer = document.getElementById('outputContainer');
             if (outputContainer.style.height === '100vh') {
@@ -206,7 +205,6 @@
             }
         }
 
-        // Lock/Unlock content editable area
         function toggleLock() {
             const outputContainer = document.getElementById("outputContainer");
             outputContainer.contentEditable = outputContainer.contentEditable === "true" ? "false" : "true";
@@ -238,7 +236,7 @@
             document.getElementById("removeText").value = '';
         }
 
-        // Listen for Ctrl+Q to jump to next email
+        // Jump to next email with Ctrl+Q
         document.addEventListener('keydown', function(event) {
             if (event.ctrlKey && event.key === 'q') {
                 let emails = document.querySelectorAll('#outputContainer a[href^="mailto:"]');
@@ -264,7 +262,7 @@
             }
         });
 
-        // Modify text selection to select until a comma or full stop
+        // Modify text selection to select until a comma, full stop, or end of line
         document.addEventListener('keydown', function(event) {
             if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
                 event.preventDefault();
@@ -275,17 +273,29 @@
                 if (event.key === 'ArrowRight') {
                     let nextStop = content.indexOf('.', range.endOffset);
                     let nextComma = content.indexOf(',', range.endOffset);
-                    let stopPosition = nextStop === -1 ? nextComma : Math.min(nextStop, nextComma);
-                    if (stopPosition !== -1) {
-                        range.setEnd(range.endContainer, stopPosition + 1);
+                    let nextLineBreak = content.indexOf('\n', range.endOffset);
+                    let stopPosition = Math.min(
+                        nextStop === -1 ? Infinity : nextStop,
+                        nextComma === -1 ? Infinity : nextComma,
+                        nextLineBreak === -1 ? Infinity : nextLineBreak
+                    );
+
+                    if (stopPosition !== Infinity) {
+                        range.setEnd(range.endContainer, stopPosition);
                         selection.removeAllRanges();
                         selection.addRange(range);
                     }
                 } else if (event.key === 'ArrowLeft') {
                     let prevStop = content.lastIndexOf('.', range.startOffset - 1);
                     let prevComma = content.lastIndexOf(',', range.startOffset - 1);
-                    let stopPosition = prevStop === -1 ? prevComma : Math.max(prevStop, prevComma);
-                    if (stopPosition !== -1) {
+                    let prevLineBreak = content.lastIndexOf('\n', range.startOffset - 1);
+                    let stopPosition = Math.max(
+                        prevStop === -1 ? -Infinity : prevStop,
+                        prevComma === -1 ? -Infinity : prevComma,
+                        prevLineBreak === -1 ? -Infinity : prevLineBreak
+                    );
+
+                    if (stopPosition !== -Infinity) {
                         range.setStart(range.startContainer, stopPosition + 1);
                         selection.removeAllRanges();
                         selection.addRange(range);
