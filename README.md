@@ -1,194 +1,327 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entry Workspace</title>
     <style>
-        /* Basic styling for a professional look */
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Times New Roman', serif;
             margin: 20px;
             background-color: #f4f4f9;
+            overflow: auto;
         }
-
         h2 {
             color: #333;
         }
-
-        /* Fullscreen mode for processed text */
-        #outputContainer.fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: 999;
-            background-color: #fff;
-        }
-
-        /* Styling for the login modal */
-        #loginModal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 20px;
-            background-color: white;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-
-        /* Page Full-Screen Button */
-        #toggleFullScreen {
-            background-color: #1E90FF;
-            color: white;
-            padding: 5px 10px;
-            cursor: pointer;
+        textarea#textInput {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            font-size: 18px;
             border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            resize: vertical;
         }
-
-        /* Add more button and font styles */
+        div#outputContainer {
+            width: 100%;
+            height: 500px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            overflow-y: auto;
+            color: black;
+            font-size: 18px;
+            font-family: 'Times New Roman', serif;
+            white-space: pre-wrap;
+        }
         button {
-            background-color: #1E90FF;
-            color: white;
+            padding: 5px 10px;
+            font-size: 14px;
             border: none;
-            padding: 10px 15px;
+            border-radius: 5px;
             cursor: pointer;
+            transition: background-color 0.3s;
             margin-right: 5px;
         }
-
-        button:hover {
-            opacity: 0.9;
+        button.blue {
+            background-color: #1E90FF;
+            color: white;
         }
-
-        /* Button to toggle processed box fullscreen */
-        #outputFullScreenBtn {
-            position: fixed;
-            top: 10px;
-            right: 50px;
-            z-index: 1001;
+        button.green {
+            background-color: #32CD32;
+            color: white;
         }
-
-        /* Username display */
-        #usernameDisplay {
-            position: fixed;
+        button.red {
+            background-color: #FF6347;
+            color: white;
+            position: absolute;
             top: 10px;
             right: 20px;
-            font-size: 18px;
-            color: #333;
+        }
+        button.lock {
+            background-color: #696969;
+            color: white;
+        }
+        button.lock.locked {
+            background-color: red;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        #loading {
+            display: none;
+            color: red;
+        }
+        #fontOptions {
+            margin-top: 10px;
+        }
+        #fullPage {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+        }
+        #copyButton {
+            background-color: #ffa500;
+            color: white;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        #customRemoveSection {
+            margin-top: 20px;
+        }
+        #customRemoveSection input {
+            padding: 5px;
+            width: 200px;
+            font-size: 14px;
+        }
+        .highlight {
+            background-color: yellow;
             font-weight: bold;
         }
     </style>
 </head>
 <body>
     <h2>Entry Workspace</h2>
-
-    <!-- Login Modal -->
-    <div id="loginModal">
-        <h3>Login</h3>
-        <label for="usernameInput">Enter your username:</label>
-        <input type="text" id="usernameInput">
-        <button onclick="login()">Submit</button>
-    </div>
-
-    <!-- Text input and processing buttons -->
     <textarea id="textInput" placeholder="Paste your text here..."></textarea>
     <br>
     <button class="green" onclick="cleanText()">Fix Text</button>
     <button class="blue" onclick="advancedFixText()">Advanced Fix</button>
     <button id="copyButton" onclick="copyText()">Copy</button>
     <button class="lock" onclick="toggleLock()">Lock</button>
-    <button id="toggleFullScreen" onclick="toggleFullScreen()">Full Screen</button>
-    <button id="outputFullScreenBtn" onclick="toggleOutputFullScreen()">Processed Box Full Screen</button>
-
-    <div id="entryCount">Total Entries: 0</div>
-    <div id="todaysEntry">Today's Entries: 0</div>
-
+    <button id="fullPage" onclick="toggleFullScreen()">Full Page</button>
+    <br><br>
     <div id="outputContainer" contenteditable="true"></div>
-    <div id="usernameDisplay"></div>
 
-    <!-- Font options and text customization -->
     <div id="fontOptions">
         <label for="fontSelect">Font:</label>
         <select id="fontSelect" onchange="changeFont()">
+            <option value="'Times New Roman', serif">Times New Roman</option>
             <option value="Arial, sans-serif">Arial</option>
             <option value="Courier New, monospace">Courier New</option>
-            <option value="'Georgia', serif">Georgia</option>
-            <!-- Add more fonts here -->
         </select>
 
         <label for="fontSize">Size:</label>
         <input type="number" id="fontSize" value="18" min="10" max="40" onchange="changeFontSize()">
     </div>
 
+    <!-- Section for removing custom phrases -->
+    <div id="customRemoveSection">
+        <label for="removeText">Enter text to remove:</label>
+        <input type="text" id="removeText" placeholder="Enter text to remove">
+        <button onclick="removeCustomText()">Delete</button>
+    </div>
+
     <script>
-        let username = localStorage.getItem('username');
-        let totalEntries = parseInt(localStorage.getItem('totalEntries')) || 0;
-        let todaysEntries = parseInt(localStorage.getItem('todaysEntries')) || 0;
+        // Define special characters and their replacements
+        const specialChars = {
+            'À': 'A', 'á': 'a', 'â': 'a', 'ç': 'c', 'ê': 'e', 
+            'É': 'E', 'È': 'E', 'Ì': 'I', 'î': 'i', 'í': 'i', 
+            'Ò': 'O', 'ô': 'o', 'ó': 'o', 'Ù': 'U'
+        };
 
-        // Show the login modal if username is not set
-        if (!username) {
-            document.getElementById('loginModal').style.display = 'block';
-        } else {
-            document.getElementById('usernameDisplay').textContent = `Welcome, ${username}`;
+        function highlightReplacements(text) {
+            return text.replace(/[ÀáâçêÉÈÌîíÒôóÙ]/g, match => {
+                const replacement = specialChars[match] || match;
+                return `<span class="highlight">${replacement}</span>`;
+            });
         }
 
-        // Handle login and save username
-        function login() {
-            const usernameInput = document.getElementById('usernameInput').value;
-            if (usernameInput) {
-                localStorage.setItem('username', usernameInput);
-                document.getElementById('usernameDisplay').textContent = `Welcome, ${usernameInput}`;
-                document.getElementById('loginModal').style.display = 'none';
-            }
+        function advancedFixText() {
+            let inputText = document.getElementById("textInput").value;
+            let entries = inputText.split(/\n\s*\n/);
+            let output = '';
+
+            entries.forEach(entry => {
+                entry = entry.replace(/View the author's ORCID record/gi, '')
+                             .replace(/Corresponding author/gi, '')
+                             .replace(/https?:\/\/\S+/g, '')
+                             .replace(/(?<=\s)[.,](?=\s)/g, '') // Remove isolated punctuation
+                             .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
+                             .trim();
+
+                // Highlight special characters and replace with regular text
+                entry = highlightReplacements(entry);
+
+                let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
+                let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
+
+                let nameMatch = entry.match(namePattern);
+                let emailMatch = entry.match(emailPattern);
+                let formattedEntry = '';
+
+                if (nameMatch) formattedEntry += nameMatch[0] + '<br>';
+                formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
+                                       .replace(emailMatch ? emailMatch[0] : '', '')
+                                       .trim() + '<br>';
+                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
+
+                output += formattedEntry + '<br>'; // Removed horizontal line
+            });
+
+            document.getElementById("outputContainer").innerHTML = output;
+            localStorage.setItem('outputContent', output);
         }
 
-        // Toggle full-screen mode for the page
+        function cleanText() {
+            document.getElementById("loading").style.display = "inline";
+            setTimeout(() => {
+                let inputText = document.getElementById("textInput").value;
+
+                inputText = inputText.replace(/View the author's ORCID record/gi, '')
+                                     .replace(/Corresponding author/gi, '')
+                                     .replace(/https?:\/\/\S+/g, '')
+                                     .replace(/(?<=\s)[.,](?=\s)/g, '') // Remove isolated punctuation
+                                     .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
+                                     .trim();
+
+                inputText = highlightReplacements(inputText);
+
+                inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
+                    return '<a href="mailto:' + email + '">' + email + '</a>';
+                });
+
+                document.getElementById("outputContainer").innerHTML = inputText;
+                localStorage.setItem('outputContent', inputText);
+                document.getElementById("loading").style.display = "none";
+            }, 1000);
+        }
+
         function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        // Toggle full-screen mode for processed text box
-        function toggleOutputFullScreen() {
             const outputContainer = document.getElementById('outputContainer');
-            outputContainer.classList.toggle('fullscreen');
+            if (outputContainer.style.height === '100vh') {
+                outputContainer.style.height = '500px';
+                document.body.style.overflow = 'auto';
+            } else {
+                outputContainer.style.height = '100vh';
+                document.body.style.overflow = 'hidden';
+            }
         }
 
-        // Insert "Professor" when "qq" is typed
-        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
-            const text = event.target.innerText;
-            if (event.key === 'q' && text.endsWith('q')) {
-                event.preventDefault();
-                document.execCommand('insertText', false, 'Professor');
-            }
-        });
+        function toggleLock() {
+            const outputContainer = document.getElementById("outputContainer");
+            outputContainer.contentEditable = outputContainer.contentEditable === "true" ? "false" : "true";
+            document.querySelector('.lock').classList.toggle('locked');
+        }
 
-        // Detect cut and increase "Today's Entries"
-        document.getElementById('outputContainer').addEventListener('cut', function(event) {
-            const selection = window.getSelection().toString();
-            if (selection.match(/\S+@\S+\.\S+/)) {
-                todaysEntries++;
-                localStorage.setItem('todaysEntries', todaysEntries);
-                document.getElementById('todaysEntry').textContent = `Today's Entries: ${todaysEntries}`;
-            }
-        });
-
-        // Handle font changes
         function changeFont() {
             const font = document.getElementById("fontSelect").value;
             document.getElementById("outputContainer").style.fontFamily = font;
         }
 
-        // Handle font size changes
         function changeFontSize() {
-            const fontSize = document.getElementById("fontSize").value;
-            document.getElementById("outputContainer").style.fontSize = fontSize + "px";
+            const size = document.getElementById("fontSize").value;
+            document.getElementById("outputContainer").style.fontSize = size + 'px';
         }
+
+        function copyText() {
+            const outputText = document.getElementById("outputContainer").innerText;
+            navigator.clipboard.writeText(outputText).then(() => {
+                alert('Text copied to clipboard');
+            });
+        }
+
+        function removeCustomText() {
+            const textToRemove = document.getElementById("removeText").value;
+            const outputContainer = document.getElementById("outputContainer");
+            outputContainer.innerHTML = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
+            localStorage.setItem('outputContent', outputContainer.innerHTML);
+            document.getElementById("removeText").value = '';
+        }
+
+        // Ctrl+Q to jump to next email
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'q') {
+                let emails = document.querySelectorAll('#outputContainer a[href^="mailto:"]');
+                let currentSelection = window.getSelection().anchorNode;
+                let nextEmail = null;
+
+                for (let i = 0; i < emails.length; i++) {
+                    if (currentSelection && emails[i].contains(currentSelection)) {
+                        nextEmail = emails[i + 1] || emails[0];
+                        break;
+                    }
+                }
+
+                if (!nextEmail) nextEmail = emails[0];
+
+                if (nextEmail) {
+                    let range = document.createRange();
+                    range.selectNode(nextEmail);
+                    window.getSelection().removeAllRanges();
+                    window.getSelection().addRange(range);
+                    nextEmail.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                event.preventDefault();
+            }
+        });
+
+        // Modify text selection to select until a comma, full stop, or end of line
+        document.addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+                event.preventDefault();
+                let selection = window.getSelection();
+                let range = selection.getRangeAt(0);
+                let content = range.endContainer.textContent;
+
+                if (event.key === 'ArrowRight') {
+                    let nextStop = content.indexOf('.', range.endOffset);
+                    let nextComma = content.indexOf(',', range.endOffset);
+                    let nextLineBreak = content.indexOf('\n', range.endOffset);
+                    let stopPosition = Math.min(
+                        nextStop === -1 ? Infinity : nextStop,
+                        nextComma === -1 ? Infinity : nextComma,
+                        nextLineBreak === -1 ? Infinity : nextLineBreak
+                    );
+
+                    if (stopPosition !== Infinity) {
+                        range.setEnd(range.endContainer, stopPosition); // Do not include the punctuation
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                } else if (event.key === 'ArrowLeft') {
+                    let prevStop = content.lastIndexOf('.', range.startOffset - 1);
+                    let prevComma = content.lastIndexOf(',', range.startOffset - 1);
+                    let prevLineBreak = content.lastIndexOf('\n', range.startOffset - 1);
+                    let stopPosition = Math.max(
+                        prevStop === -1 ? -Infinity : prevStop,
+                        prevComma === -1 ? -Infinity : prevComma,
+                        prevLineBreak === -1 ? -Infinity : prevLineBreak
+                    );
+
+                    if (stopPosition !== -Infinity) {
+                        range.setStart(range.startContainer, stopPosition); // Do not include the punctuation
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
