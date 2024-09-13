@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -83,9 +82,27 @@
             top: 10px;
             left: 20px;
         }
+        #exitFullScreen {
+            display: none;
+            position: fixed;
+            bottom: 10px;
+            right: 20px;
+            z-index: 1001;
+        }
         #copyButton {
             background-color: #ffa500;
             color: white;
+        }
+        #entryCount, #todaysEntry {
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        #todaysEntry {
+            top: 40px;
         }
         hr {
             border: none;
@@ -102,7 +119,6 @@
         }
         .highlight {
             background-color: yellow;
-            font-weight: bold;
         }
     </style>
 </head>
@@ -114,7 +130,10 @@
     <button class="blue" onclick="advancedFixText()">Advanced Fix</button>
     <button id="copyButton" onclick="copyText()">Copy</button>
     <button class="lock" onclick="toggleLock()">Lock</button>
-    <button id="fullPage" onclick="toggleFullScreen()">Full Page</button>
+    <button id="fullPage" onclick="toggleFullScreen()">Full Screen</button>
+    <button id="exitFullScreen" onclick="exitFullScreen()">Exit Full Screen</button>
+    <div id="entryCount">Total Entries: 0</div>
+    <div id="todaysEntry">Today's Entries: 0</div>
     <br><br>
     <div id="outputContainer" contenteditable="true"></div>
 
@@ -138,18 +157,38 @@
     </div>
 
     <script>
-        // Define special characters and their replacements
-        const specialChars = {
-            'À': 'A', 'á': 'a', 'â': 'a', 'ç': 'c', 'ê': 'e', 
-            'É': 'E', 'È': 'E', 'Ì': 'I', 'î': 'i', 'í': 'i', 
-            'Ò': 'O', 'ô': 'o', 'ó': 'o', 'Ù': 'U'
-        };
+        // LocalStorage keys
+        const TOTAL_ENTRIES_KEY = 'totalEntries';
+        const TODAYS_ENTRIES_KEY = 'todaysEntries';
+        const LAST_UPDATED_DATE_KEY = 'lastUpdatedDate';
 
-        function highlightReplacements(text) {
-            return text.replace(/[ÀáâçêÉÈÌîíÒôóÙ]/g, match => {
-                const replacement = specialChars[match] || match;
-                return `<span class="highlight">${replacement}</span>`;
-            });
+        let totalEntries = parseInt(localStorage.getItem(TOTAL_ENTRIES_KEY)) || 0;
+        let todaysEntries = parseInt(localStorage.getItem(TODAYS_ENTRIES_KEY)) || 0;
+        let lastUpdatedDate = localStorage.getItem(LAST_UPDATED_DATE_KEY) || new Date().toDateString();
+
+        // Check if it's a new day and reset today's entry if needed
+        function resetTodaysEntryIfNewDay() {
+            const currentDate = new Date().toDateString();
+            if (currentDate !== lastUpdatedDate) {
+                todaysEntries = 0;
+                lastUpdatedDate = currentDate;
+                localStorage.setItem(LAST_UPDATED_DATE_KEY, currentDate);
+                localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
+            }
+        }
+
+        // Update the UI with the current counts
+        function updateEntryDisplay() {
+            document.getElementById("entryCount").textContent = `Total Entries: ${totalEntries}`;
+            document.getElementById("todaysEntry").textContent = `Today's Entries: ${todaysEntries}`;
+        }
+
+        resetTodaysEntryIfNewDay();
+        updateEntryDisplay();
+
+        // Helper function to clean special characters (remove diacritics)
+        function removeDiacritics(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
         function advancedFixText() {
@@ -165,8 +204,8 @@
                              .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
                              .trim();
 
-                // Highlight special characters and replace with regular text
-                entry = highlightReplacements(entry);
+                // Clean the text (remove diacritics)
+                entry = removeDiacritics(entry);
 
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
                 let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
@@ -179,13 +218,17 @@
                 formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
                                        .replace(emailMatch ? emailMatch[0] : '', '')
                                        .trim() + '<br>';
-                if (emailMatch) formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
+                if (emailMatch) {
+                    formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
+                    totalEntries++; // Increment total entries
+                }
 
-                output += formattedEntry + '<br>'; // Removed horizontal line
+                output += formattedEntry + '<br>';
             });
 
             document.getElementById("outputContainer").innerHTML = output;
-            localStorage.setItem('outputContent', output);
+            localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
+            updateEntryDisplay();
         }
 
         function cleanText() {
@@ -200,33 +243,52 @@
                                      .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
                                      .trim();
 
-                inputText = highlightReplacements(inputText);
+                // Clean the text (remove diacritics)
+                inputText = removeDiacritics(inputText);
 
-                inputText = inputText.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi, function(email) {
-                    return '<a href="mailto:' + email + '">' + email + '</a>';
-                });
+                document.getElementById("outputContainer").innerText = inputText;
 
-                document.getElementById("outputContainer").innerHTML = inputText;
-                localStorage.setItem('outputContent', inputText);
                 document.getElementById("loading").style.display = "none";
             }, 1000);
         }
 
-        function toggleFullScreen() {
-            const outputContainer = document.getElementById('outputContainer');
-            if (outputContainer.style.height === '100vh') {
-                outputContainer.style.height = '500px';
-                document.body.style.overflow = 'auto';
-            } else {
-                outputContainer.style.height = '100vh';
-                document.body.style.overflow = 'hidden';
-            }
+        function copyText() {
+            const outputContainer = document.getElementById("outputContainer");
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(outputContainer);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            document.execCommand("copy");
+            alert("Text copied to clipboard");
         }
 
         function toggleLock() {
             const outputContainer = document.getElementById("outputContainer");
-            outputContainer.contentEditable = outputContainer.contentEditable === "true" ? "false" : "true";
-            document.querySelector('.lock').classList.toggle('locked');
+            const lockButton = document.querySelector('.lock');
+            if (outputContainer.contentEditable === "true") {
+                outputContainer.contentEditable = "false";
+                lockButton.classList.add("locked");
+                lockButton.textContent = "Unlock";
+            } else {
+                outputContainer.contentEditable = "true";
+                lockButton.classList.remove("locked");
+                lockButton.textContent = "Lock";
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                document.getElementById("exitFullScreen").style.display = "block";
+            }
+        }
+
+        function exitFullScreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+                document.getElementById("exitFullScreen").style.display = "none";
+            }
         }
 
         function changeFont() {
@@ -235,93 +297,40 @@
         }
 
         function changeFontSize() {
-            const size = document.getElementById("fontSize").value;
-            document.getElementById("outputContainer").style.fontSize = size + 'px';
-        }
-
-        function copyText() {
-            const outputText = document.getElementById("outputContainer").innerText;
-            navigator.clipboard.writeText(outputText).then(() => {
-                alert('Text copied to clipboard');
-            });
+            const fontSize = document.getElementById("fontSize").value;
+            document.getElementById("outputContainer").style.fontSize = fontSize + "px";
         }
 
         function removeCustomText() {
             const textToRemove = document.getElementById("removeText").value;
             const outputContainer = document.getElementById("outputContainer");
-            outputContainer.innerHTML = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
-            localStorage.setItem('outputContent', outputContainer.innerHTML);
-            document.getElementById("removeText").value = '';
+            const outputText = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
+            outputContainer.innerHTML = outputText;
         }
 
-        // Ctrl+Q to jump to next email
-        document.addEventListener('keydown', function(event) {
-            if (event.ctrlKey && event.key === 'q') {
-                let emails = document.querySelectorAll('#outputContainer a[href^="mailto:"]');
-                let currentSelection = window.getSelection().anchorNode;
-                let nextEmail = null;
-
-                for (let i = 0; i < emails.length; i++) {
-                    if (currentSelection && emails[i].contains(currentSelection)) {
-                        nextEmail = emails[i + 1] || emails[0];
-                        break;
-                    }
-                }
-
-                if (!nextEmail) nextEmail = emails[0];
-
-                if (nextEmail) {
-                    let range = document.createRange();
-                    range.selectNode(nextEmail);
-                    window.getSelection().removeAllRanges();
-                    window.getSelection().addRange(range);
-                    nextEmail.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-                event.preventDefault();
+        // Add "Professor" when "q" is pressed
+        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
+            if (event.key === 'q') {
+                event.preventDefault(); // Prevent the default "q" input
+                insertProfessorAtCaret();
             }
         });
 
-        // Modify text selection to select until a comma, full stop, or end of line
-        document.addEventListener('keydown', function(event) {
-            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
-                event.preventDefault();
-                let selection = window.getSelection();
-                let range = selection.getRangeAt(0);
-                let content = range.endContainer.textContent;
+        function insertProfessorAtCaret() {
+            const outputContainer = document.getElementById('outputContainer');
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
 
-                if (event.key === 'ArrowRight') {
-                    let nextStop = content.indexOf('.', range.endOffset);
-                    let nextComma = content.indexOf(',', range.endOffset);
-                    let nextLineBreak = content.indexOf('\n', range.endOffset);
-                    let stopPosition = Math.min(
-                        nextStop === -1 ? Infinity : nextStop,
-                        nextComma === -1 ? Infinity : nextComma,
-                        nextLineBreak === -1 ? Infinity : nextLineBreak
-                    );
+            // Insert "Professor" at the current caret position
+            const textNode = document.createTextNode('Professor ');
+            range.insertNode(textNode);
 
-                    if (stopPosition !== Infinity) {
-                        range.setEnd(range.endContainer, stopPosition); // Do not include the punctuation
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
-                } else if (event.key === 'ArrowLeft') {
-                    let prevStop = content.lastIndexOf('.', range.startOffset - 1);
-                    let prevComma = content.lastIndexOf(',', range.startOffset - 1);
-                    let prevLineBreak = content.lastIndexOf('\n', range.startOffset - 1);
-                    let stopPosition = Math.max(
-                        prevStop === -1 ? -Infinity : prevStop,
-                        prevComma === -1 ? -Infinity : prevComma,
-                        prevLineBreak === -1 ? -Infinity : prevLineBreak
-                    );
-
-                    if (stopPosition !== -Infinity) {
-                        range.setStart(range.startContainer, stopPosition); // Do not include the punctuation
-                        selection.removeAllRanges();
-                        selection.addRange(range);
-                    }
-                }
-            }
-        });
+            // Move the caret to after the inserted text
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
     </script>
 </body>
 </html>
