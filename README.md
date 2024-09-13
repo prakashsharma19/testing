@@ -4,332 +4,190 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entry Workspace</title>
     <style>
+        /* Basic styling for a professional look */
         body {
-            font-family: 'Times New Roman', serif;
+            font-family: 'Arial', sans-serif;
             margin: 20px;
             background-color: #f4f4f9;
-            overflow: auto;
         }
+
         h2 {
             color: #333;
         }
-        textarea#textInput {
-            width: 100%;
-            height: 100px;
-            padding: 10px;
-            font-size: 18px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            margin-bottom: 20px;
-            resize: vertical;
-        }
-        div#outputContainer {
-            width: 100%;
-            height: 500px;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+
+        /* Fullscreen mode for processed text */
+        #outputContainer.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 999;
             background-color: #fff;
-            overflow-y: auto;
-            color: black;
-            font-size: 18px;
-            font-family: 'Times New Roman', serif;
-            white-space: pre-wrap;
         }
-        button {
-            padding: 5px 10px;
-            font-size: 14px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            margin-right: 5px;
+
+        /* Styling for the login modal */
+        #loginModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
         }
-        button.blue {
+
+        /* Page Full-Screen Button */
+        #toggleFullScreen {
             background-color: #1E90FF;
             color: white;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
         }
-        button.green {
-            background-color: #32CD32;
+
+        /* Add more button and font styles */
+        button {
+            background-color: #1E90FF;
             color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            margin-right: 5px;
         }
-        button.red {
-            background-color: #FF6347;
-            color: white;
-            position: absolute;
-            top: 10px;
-            right: 20px;
-        }
-        button.lock {
-            background-color: #696969;
-            color: white;
-        }
-        button.lock.locked {
-            background-color: red;
-        }
+
         button:hover {
-            opacity: 0.8;
+            opacity: 0.9;
         }
-        #loading {
-            display: none;
-            color: red;
-        }
-        #fontOptions {
-            margin-top: 10px;
-        }
-        #fullPage {
-            position: absolute;
-            top: 10px;
-            left: 20px;
-        }
-        #exitFullScreen {
-            display: none;
+
+        /* Button to toggle processed box fullscreen */
+        #outputFullScreenBtn {
             position: fixed;
-            bottom: 10px;
-            right: 20px;
+            top: 10px;
+            right: 50px;
             z-index: 1001;
         }
-        #copyButton {
-            background-color: #ffa500;
-            color: white;
-        }
-        #entryCount, #todaysEntry {
+
+        /* Username display */
+        #usernameDisplay {
             position: fixed;
             top: 10px;
             right: 20px;
             font-size: 18px;
-            font-weight: bold;
             color: #333;
-        }
-        #todaysEntry {
-            top: 40px;
-        }
-        hr {
-            border: none;
-            border-top: 1px solid #ccc;
-            margin: 10px 0;
-        }
-        #customRemoveSection {
-            margin-top: 20px;
-        }
-        #customRemoveSection input {
-            padding: 5px;
-            width: 200px;
-            font-size: 14px;
-        }
-        .highlight {
-            background-color: yellow;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <h2>Entry Workspace</h2>
+
+    <!-- Login Modal -->
+    <div id="loginModal">
+        <h3>Login</h3>
+        <label for="usernameInput">Enter your username:</label>
+        <input type="text" id="usernameInput">
+        <button onclick="login()">Submit</button>
+    </div>
+
+    <!-- Text input and processing buttons -->
     <textarea id="textInput" placeholder="Paste your text here..."></textarea>
     <br>
     <button class="green" onclick="cleanText()">Fix Text</button>
     <button class="blue" onclick="advancedFixText()">Advanced Fix</button>
     <button id="copyButton" onclick="copyText()">Copy</button>
     <button class="lock" onclick="toggleLock()">Lock</button>
-    <button id="fullPage" onclick="toggleFullScreen()">Full Screen</button>
-    <button id="exitFullScreen" onclick="exitFullScreen()">Exit Full Screen</button>
+    <button id="toggleFullScreen" onclick="toggleFullScreen()">Full Screen</button>
+    <button id="outputFullScreenBtn" onclick="toggleOutputFullScreen()">Processed Box Full Screen</button>
+
     <div id="entryCount">Total Entries: 0</div>
     <div id="todaysEntry">Today's Entries: 0</div>
-    <br><br>
-    <div id="outputContainer" contenteditable="true"></div>
 
+    <div id="outputContainer" contenteditable="true"></div>
+    <div id="usernameDisplay"></div>
+
+    <!-- Font options and text customization -->
     <div id="fontOptions">
         <label for="fontSelect">Font:</label>
         <select id="fontSelect" onchange="changeFont()">
-            <option value="'Times New Roman', serif">Times New Roman</option>
             <option value="Arial, sans-serif">Arial</option>
             <option value="Courier New, monospace">Courier New</option>
+            <option value="'Georgia', serif">Georgia</option>
+            <!-- Add more fonts here -->
         </select>
 
         <label for="fontSize">Size:</label>
         <input type="number" id="fontSize" value="18" min="10" max="40" onchange="changeFontSize()">
     </div>
 
-    <!-- Section for removing custom phrases -->
-    <div id="customRemoveSection">
-        <label for="removeText">Enter text to remove:</label>
-        <input type="text" id="removeText" placeholder="Enter text to remove">
-        <button onclick="removeCustomText()">Delete</button>
-    </div>
-
     <script>
-        // LocalStorage keys
-        const TOTAL_ENTRIES_KEY = 'totalEntries';
-        const TODAYS_ENTRIES_KEY = 'todaysEntries';
-        const LAST_UPDATED_DATE_KEY = 'lastUpdatedDate';
+        let username = localStorage.getItem('username');
+        let totalEntries = parseInt(localStorage.getItem('totalEntries')) || 0;
+        let todaysEntries = parseInt(localStorage.getItem('todaysEntries')) || 0;
 
-        let totalEntries = parseInt(localStorage.getItem(TOTAL_ENTRIES_KEY)) || 0;
-        let todaysEntries = parseInt(localStorage.getItem(TODAYS_ENTRIES_KEY)) || 0;
-        let lastUpdatedDate = localStorage.getItem(LAST_UPDATED_DATE_KEY) || new Date().toDateString();
+        // Show the login modal if username is not set
+        if (!username) {
+            document.getElementById('loginModal').style.display = 'block';
+        } else {
+            document.getElementById('usernameDisplay').textContent = `Welcome, ${username}`;
+        }
 
-        // Check if it's a new day and reset today's entry if needed
-        function resetTodaysEntryIfNewDay() {
-            const currentDate = new Date().toDateString();
-            if (currentDate !== lastUpdatedDate) {
-                todaysEntries = 0;
-                lastUpdatedDate = currentDate;
-                localStorage.setItem(LAST_UPDATED_DATE_KEY, currentDate);
-                localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
+        // Handle login and save username
+        function login() {
+            const usernameInput = document.getElementById('usernameInput').value;
+            if (usernameInput) {
+                localStorage.setItem('username', usernameInput);
+                document.getElementById('usernameDisplay').textContent = `Welcome, ${usernameInput}`;
+                document.getElementById('loginModal').style.display = 'none';
             }
         }
 
-        // Update the UI with the current counts
-        function updateEntryDisplay() {
-            document.getElementById("entryCount").textContent = `Total Entries: ${totalEntries}`;
-            document.getElementById("todaysEntry").textContent = `Today's Entries: ${todaysEntries}`;
-        }
-
-        resetTodaysEntryIfNewDay();
-        updateEntryDisplay();
-
-        // Helper function to clean special characters (remove diacritics)
-        function removeDiacritics(str) {
-            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-        }
-
-        function advancedFixText() {
-            let inputText = document.getElementById("textInput").value;
-            let entries = inputText.split(/\n\s*\n/);
-            let output = '';
-
-            entries.forEach(entry => {
-                entry = entry.replace(/View the author's ORCID record/gi, '')
-                             .replace(/Corresponding author/gi, '')
-                             .replace(/https?:\/\/\S+/g, '')
-                             .replace(/(?<=\s)[.,](?=\s)/g, '') // Remove isolated punctuation
-                             .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
-                             .trim();
-
-                // Clean the text (remove diacritics)
-                entry = removeDiacritics(entry);
-
-                let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
-                let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
-
-                let nameMatch = entry.match(namePattern);
-                let emailMatch = entry.match(emailPattern);
-                let formattedEntry = '';
-
-                if (nameMatch) formattedEntry += nameMatch[0] + '<br>';
-                formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
-                                       .replace(emailMatch ? emailMatch[0] : '', '')
-                                       .trim() + '<br>';
-                if (emailMatch) {
-                    formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
-                    totalEntries++; // Increment total entries
-                }
-
-                output += formattedEntry + '<br>';
-            });
-
-            document.getElementById("outputContainer").innerHTML = output;
-            localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
-            updateEntryDisplay();
-        }
-
-        function cleanText() {
-            document.getElementById("loading").style.display = "inline";
-            setTimeout(() => {
-                let inputText = document.getElementById("textInput").value;
-
-                inputText = inputText.replace(/View the author's ORCID record/gi, '')
-                                     .replace(/Corresponding author/gi, '')
-                                     .replace(/https?:\/\/\S+/g, '')
-                                     .replace(/(?<=\s)[.,](?=\s)/g, '') // Remove isolated punctuation
-                                     .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
-                                     .trim();
-
-                // Clean the text (remove diacritics)
-                inputText = removeDiacritics(inputText);
-
-                document.getElementById("outputContainer").innerText = inputText;
-
-                document.getElementById("loading").style.display = "none";
-            }, 1000);
-        }
-
-        function copyText() {
-            const outputContainer = document.getElementById("outputContainer");
-            const selection = window.getSelection();
-            const range = document.createRange();
-            range.selectNodeContents(outputContainer);
-            selection.removeAllRanges();
-            selection.addRange(range);
-            document.execCommand("copy");
-            alert("Text copied to clipboard");
-        }
-
-        function toggleLock() {
-            const outputContainer = document.getElementById("outputContainer");
-            const lockButton = document.querySelector('.lock');
-            if (outputContainer.contentEditable === "true") {
-                outputContainer.contentEditable = "false";
-                lockButton.classList.add("locked");
-                lockButton.textContent = "Unlock";
-            } else {
-                outputContainer.contentEditable = "true";
-                lockButton.classList.remove("locked");
-                lockButton.textContent = "Lock";
-            }
-        }
-
+        // Toggle full-screen mode for the page
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen();
-                document.getElementById("exitFullScreen").style.display = "block";
-            }
-        }
-
-        function exitFullScreen() {
-            if (document.fullscreenElement) {
+            } else {
                 document.exitFullscreen();
-                document.getElementById("exitFullScreen").style.display = "none";
             }
         }
 
+        // Toggle full-screen mode for processed text box
+        function toggleOutputFullScreen() {
+            const outputContainer = document.getElementById('outputContainer');
+            outputContainer.classList.toggle('fullscreen');
+        }
+
+        // Insert "Professor" when "qq" is typed
+        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
+            const text = event.target.innerText;
+            if (event.key === 'q' && text.endsWith('q')) {
+                event.preventDefault();
+                document.execCommand('insertText', false, 'Professor');
+            }
+        });
+
+        // Detect cut and increase "Today's Entries"
+        document.getElementById('outputContainer').addEventListener('cut', function(event) {
+            const selection = window.getSelection().toString();
+            if (selection.match(/\S+@\S+\.\S+/)) {
+                todaysEntries++;
+                localStorage.setItem('todaysEntries', todaysEntries);
+                document.getElementById('todaysEntry').textContent = `Today's Entries: ${todaysEntries}`;
+            }
+        });
+
+        // Handle font changes
         function changeFont() {
             const font = document.getElementById("fontSelect").value;
             document.getElementById("outputContainer").style.fontFamily = font;
         }
 
+        // Handle font size changes
         function changeFontSize() {
             const fontSize = document.getElementById("fontSize").value;
             document.getElementById("outputContainer").style.fontSize = fontSize + "px";
-        }
-
-        function removeCustomText() {
-            const textToRemove = document.getElementById("removeText").value;
-            const outputContainer = document.getElementById("outputContainer");
-            const outputText = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
-            outputContainer.innerHTML = outputText;
-        }
-
-        // Add "Professor" when "q" is pressed
-        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
-            if (event.key === 'qq') {
-                event.preventDefault(); // Prevent the default "q" input
-                insertProfessorAtCaret();
-            }
-        });
-
-        function insertProfessorAtCaret() {
-            const outputContainer = document.getElementById('outputContainer');
-            const selection = window.getSelection();
-            const range = selection.getRangeAt(0);
-
-            // Insert "Professor" at the current caret position
-            const textNode = document.createTextNode('Professor ');
-            range.insertNode(textNode);
-
-            // Move the caret to after the inserted text
-            range.setStartAfter(textNode);
-            range.setEndAfter(textNode);
-            selection.removeAllRanges();
-            selection.addRange(range);
         }
     </script>
 </body>
