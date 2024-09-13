@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -317,14 +318,14 @@
             saveSession();
         }
 
-        // Insert "Professor" when Alt + P is pressed
+        // Insert "Professor" when typing "pr" and pressing Alt + P
         document.getElementById('outputContainer').addEventListener('keydown', function(event) {
             if (event.key === 'p' && event.altKey) {
                 event.preventDefault();
                 insertProfessorAtCaret();
             }
 
-            if (event.key === 'q' && event.altKey) {
+            if (event.key === 'q' && event.ctrlKey) {
                 event.preventDefault();
                 jumpToNextEmail();
             }
@@ -348,7 +349,7 @@
             saveSession();
         }
 
-        // Jump to the next email when Alt + Q is pressed
+        // Jump to the next email when Ctrl + Q is pressed
         function jumpToNextEmail() {
             const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
