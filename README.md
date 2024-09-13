@@ -161,6 +161,7 @@
         const TOTAL_ENTRIES_KEY = 'totalEntries';
         const TODAYS_ENTRIES_KEY = 'todaysEntries';
         const LAST_UPDATED_DATE_KEY = 'lastUpdatedDate';
+        const OUTPUT_CONTAINER_KEY = 'outputContainerContent';
 
         let totalEntries = parseInt(localStorage.getItem(TOTAL_ENTRIES_KEY)) || 0;
         let todaysEntries = parseInt(localStorage.getItem(TODAYS_ENTRIES_KEY)) || 0;
@@ -185,6 +186,12 @@
 
         resetTodaysEntryIfNewDay();
         updateEntryDisplay();
+
+        // Load output content from localStorage
+        const savedContent = localStorage.getItem(OUTPUT_CONTAINER_KEY);
+        if (savedContent) {
+            document.getElementById('outputContainer').innerHTML = savedContent;
+        }
 
         // Helper function to clean special characters (remove diacritics)
         function removeDiacritics(str) {
@@ -229,6 +236,7 @@
             document.getElementById("outputContainer").innerHTML = output;
             localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
             updateEntryDisplay();
+            saveSession();
         }
 
         function cleanText() {
@@ -247,7 +255,7 @@
                 inputText = removeDiacritics(inputText);
 
                 document.getElementById("outputContainer").innerText = inputText;
-
+                saveSession();
                 document.getElementById("loading").style.display = "none";
             }, 1000);
         }
@@ -306,11 +314,12 @@
             const outputContainer = document.getElementById("outputContainer");
             const outputText = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
             outputContainer.innerHTML = outputText;
+            saveSession();
         }
 
         // Add "Professor" when "q" is pressed
         document.getElementById('outputContainer').addEventListener('keydown', function(event) {
-            if (event.key === 'q') {
+            if (event.key === 'q' && event.ctrlKey) {
                 event.preventDefault(); // Prevent the default "q" input
                 insertProfessorAtCaret();
             }
@@ -330,6 +339,8 @@
             range.setEndAfter(textNode);
             selection.removeAllRanges();
             selection.addRange(range);
+
+            saveSession();
         }
 
         // Function to handle custom selection logic
@@ -350,12 +361,18 @@
                     let nextPunctuation = text.slice(newPos).search(/[,.]/);
                     if (nextPunctuation !== -1) {
                         newPos += nextPunctuation;
+                    } else {
+                        // If no punctuation is found, select the rest of the line
+                        newPos = text.length;
                     }
                 } else {
                     let prevText = text.slice(0, newPos);
                     let prevPunctuation = prevText.lastIndexOf(',') > prevText.lastIndexOf('.') ? prevText.lastIndexOf(',') : prevText.lastIndexOf('.');
                     if (prevPunctuation !== -1) {
                         newPos = prevPunctuation;
+                    } else {
+                        // If no punctuation is found, select the entire line
+                        newPos = 0;
                     }
                 }
 
@@ -364,7 +381,33 @@
                 selection.removeAllRanges();
                 selection.addRange(range);
             }
+
+            // Ctrl + Q to jump to the next email
+            if (event.ctrlKey && event.key === 'q') {
+                event.preventDefault();
+                let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
+                let result;
+                if ((result = emailPattern.exec(text.slice(range.endOffset)))) {
+                    let emailStart = range.endOffset + result.index;
+                    let emailEnd = emailStart + result[0].length;
+                    range.setStart(range.startContainer, emailStart);
+                    range.setEnd(range.startContainer, emailEnd);
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+            }
+
+            // Ctrl + Z for undo will use the default browser undo action.
         });
+
+        // Save the content of the session in localStorage
+        function saveSession() {
+            const outputContent = document.getElementById('outputContainer').innerHTML;
+            localStorage.setItem(OUTPUT_CONTAINER_KEY, outputContent);
+        }
+
+        // Save session on any changes in the content
+        document.getElementById('outputContainer').addEventListener('input', saveSession);
     </script>
 </body>
 </html>
