@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -34,7 +35,7 @@
             color: black;
             font-size: 18px;
             font-family: 'Times New Roman', serif;
-            white-space: pre-wrap; /* Keep white spaces and newlines */
+            white-space: pre-wrap;
         }
         button {
             padding: 5px 10px;
@@ -157,10 +158,40 @@
     </div>
 
     <script>
-        let totalEntries = 0;
-        let todaysEntries = 0;
+        // LocalStorage keys
+        const TOTAL_ENTRIES_KEY = 'totalEntries';
+        const TODAYS_ENTRIES_KEY = 'todaysEntries';
+        const LAST_UPDATED_DATE_KEY = 'lastUpdatedDate';
 
-        // Function to clean and process the text input
+        let totalEntries = parseInt(localStorage.getItem(TOTAL_ENTRIES_KEY)) || 0;
+        let todaysEntries = parseInt(localStorage.getItem(TODAYS_ENTRIES_KEY)) || 0;
+        let lastUpdatedDate = localStorage.getItem(LAST_UPDATED_DATE_KEY) || new Date().toDateString();
+
+        // Check if it's a new day and reset today's entry if needed
+        function resetTodaysEntryIfNewDay() {
+            const currentDate = new Date().toDateString();
+            if (currentDate !== lastUpdatedDate) {
+                todaysEntries = 0;
+                lastUpdatedDate = currentDate;
+                localStorage.setItem(LAST_UPDATED_DATE_KEY, currentDate);
+                localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
+            }
+        }
+
+        // Update the UI with the current counts
+        function updateEntryDisplay() {
+            document.getElementById("entryCount").textContent = `Total Entries: ${totalEntries}`;
+            document.getElementById("todaysEntry").textContent = `Today's Entries: ${todaysEntries}`;
+        }
+
+        resetTodaysEntryIfNewDay();
+        updateEntryDisplay();
+
+        // Helper function to clean special characters (remove diacritics)
+        function removeDiacritics(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
             let entries = inputText.split(/\n\s*\n/);
@@ -174,6 +205,9 @@
                              .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
                              .trim();
 
+                // Clean the text (remove diacritics)
+                entry = removeDiacritics(entry);
+
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
                 let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
 
@@ -181,19 +215,21 @@
                 let emailMatch = entry.match(emailPattern);
                 let formattedEntry = '';
 
-                if (nameMatch) formattedEntry += nameMatch[0] + '\n';
+                if (nameMatch) formattedEntry += nameMatch[0] + '<br>';
                 formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
                                        .replace(emailMatch ? emailMatch[0] : '', '')
-                                       .trim() + '\n';
+                                       .trim() + '<br>';
                 if (emailMatch) {
-                    formattedEntry += emailMatch[0] + '\n';
+                    formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
                     totalEntries++; // Increment total entries
                 }
 
-                output += formattedEntry + '\n';
+                output += formattedEntry + '<br>';
             });
 
-            document.getElementById("outputContainer").textContent = output.trim();
+            document.getElementById("outputContainer").innerHTML = output;
+            localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
+            updateEntryDisplay();
         }
 
         function cleanText() {
@@ -208,7 +244,10 @@
                                      .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
                                      .trim();
 
-                document.getElementById("outputContainer").textContent = inputText;
+                // Clean the text (remove diacritics)
+                inputText = removeDiacritics(inputText);
+
+                document.getElementById("outputContainer").innerText = inputText;
 
                 document.getElementById("loading").style.display = "none";
             }, 1000);
@@ -266,8 +305,32 @@
         function removeCustomText() {
             const textToRemove = document.getElementById("removeText").value;
             const outputContainer = document.getElementById("outputContainer");
-            const outputText = outputContainer.textContent.replace(new RegExp(textToRemove, 'gi'), '');
-            outputContainer.textContent = outputText;
+            const outputText = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
+            outputContainer.innerHTML = outputText;
+        }
+
+        // Add "Professor" when "q" is pressed
+        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
+            if (event.key === 'q') {
+                event.preventDefault(); // Prevent the default "q" input
+                insertProfessorAtCaret();
+            }
+        });
+
+        function insertProfessorAtCaret() {
+            const outputContainer = document.getElementById('outputContainer');
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+
+            // Insert "Professor" at the current caret position
+            const textNode = document.createTextNode('Professor ');
+            range.insertNode(textNode);
+
+            // Move the caret to after the inserted text
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+            selection.removeAllRanges();
+            selection.addRange(range);
         }
     </script>
 </body>
