@@ -318,19 +318,6 @@
             saveSession();
         }
 
-        // Insert "Professor" when typing "pr" and pressing Alt + P
-        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
-            if (event.key === 'p' && event.altKey) {
-                event.preventDefault();
-                insertProfessorAtCaret();
-            }
-
-            if (event.key === 'q' && event.ctrlKey) {
-                event.preventDefault();
-                jumpToNextEmail();
-            }
-        });
-
         function insertProfessorAtCaret() {
             const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
@@ -349,7 +336,6 @@
             saveSession();
         }
 
-        // Jump to the next email when Ctrl + Q is pressed
         function jumpToNextEmail() {
             const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
@@ -373,43 +359,24 @@
             }
         }
 
-        // Function to handle custom selection logic for Ctrl + Shift + Arrow
         document.getElementById('outputContainer').addEventListener('keydown', function(event) {
+            const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
             const range = selection.getRangeAt(0);
             const text = range.startContainer.textContent;
 
-            // Check if Ctrl + Shift + Arrow keys are pressed
-            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
-                event.preventDefault(); // Prevent default behavior
-
-                let direction = event.key === 'ArrowRight' ? 1 : -1;
-                let newPos = range.endOffset;
-
-                // Search for the next comma or period in the correct direction
-                if (direction === 1) {
-                    let nextPunctuation = text.slice(newPos).search(/[,.]/);
-                    if (nextPunctuation !== -1) {
-                        newPos += nextPunctuation;
-                    } else {
-                        // If no punctuation is found, select the rest of the line
-                        newPos = text.length;
-                    }
-                } else {
-                    let prevText = text.slice(0, newPos);
-                    let prevPunctuation = prevText.lastIndexOf(',') > prevText.lastIndexOf('.') ? prevText.lastIndexOf(',') : prevText.lastIndexOf('.');
-                    if (prevPunctuation !== -1) {
-                        newPos = prevPunctuation;
-                    } else {
-                        // If no punctuation is found, select the entire line
-                        newPos = 0;
-                    }
-                }
-
-                // Update the selection range
-                range.setEnd(range.startContainer, newPos);
-                selection.removeAllRanges();
-                selection.addRange(range);
+            if (event.ctrlKey && event.key === 'q') {
+                event.preventDefault();
+                jumpToNextEmail();
+            } else if (event.key === 'p' && event.altKey) {
+                event.preventDefault();
+                insertProfessorAtCaret();
+            } else if (event.key === 'w' && event.key === 'w') {
+                event.preventDefault();
+                jumpToNextEmail();
+            } else if (event.key === 'p' && event.key === 'r') {
+                event.preventDefault();
+                insertProfessorAtCaret();
             }
         });
 
