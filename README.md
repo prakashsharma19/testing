@@ -317,11 +317,16 @@
             saveSession();
         }
 
-        // Add "Professor" when "q" is pressed
+        // Insert "Professor" when Alt + P is pressed
         document.getElementById('outputContainer').addEventListener('keydown', function(event) {
-            if (event.key === 'q' && event.ctrlKey) {
-                event.preventDefault(); // Prevent the default "q" input
+            if (event.key === 'p' && event.altKey) {
+                event.preventDefault();
                 insertProfessorAtCaret();
+            }
+
+            if (event.key === 'q' && event.altKey) {
+                event.preventDefault();
+                jumpToNextEmail();
             }
         });
 
@@ -343,7 +348,30 @@
             saveSession();
         }
 
-        // Function to handle custom selection logic
+        // Jump to the next email when Alt + Q is pressed
+        function jumpToNextEmail() {
+            const outputContainer = document.getElementById('outputContainer');
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+            const text = outputContainer.textContent;
+
+            // Find the next email from the current selection point
+            let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
+            emailPattern.lastIndex = range.endOffset;
+            let result = emailPattern.exec(text);
+
+            if (result) {
+                let emailStart = result.index;
+                let emailEnd = emailStart + result[0].length;
+
+                range.setStart(outputContainer.firstChild, emailStart);
+                range.setEnd(outputContainer.firstChild, emailEnd);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+
+        // Function to handle custom selection logic for Ctrl + Shift + Arrow
         document.getElementById('outputContainer').addEventListener('keydown', function(event) {
             const selection = window.getSelection();
             const range = selection.getRangeAt(0);
@@ -381,23 +409,6 @@
                 selection.removeAllRanges();
                 selection.addRange(range);
             }
-
-            // Ctrl + Q to jump to the next email
-            if (event.ctrlKey && event.key === 'q') {
-                event.preventDefault();
-                let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
-                let result;
-                if ((result = emailPattern.exec(text.slice(range.endOffset)))) {
-                    let emailStart = range.endOffset + result.index;
-                    let emailEnd = emailStart + result[0].length;
-                    range.setStart(range.startContainer, emailStart);
-                    range.setEnd(range.startContainer, emailEnd);
-                    selection.removeAllRanges();
-                    selection.addRange(range);
-                }
-            }
-
-            // Ctrl + Z for undo will use the default browser undo action.
         });
 
         // Save the content of the session in localStorage
