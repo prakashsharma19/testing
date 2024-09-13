@@ -364,6 +364,7 @@
                 let emailStart = result.index;
                 let emailEnd = emailStart + result[0].length;
 
+                // Adjust range to select the email
                 range.setStart(outputContainer.firstChild, emailStart);
                 range.setEnd(outputContainer.firstChild, emailEnd);
                 selection.removeAllRanges();
