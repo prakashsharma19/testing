@@ -331,6 +331,40 @@
             selection.removeAllRanges();
             selection.addRange(range);
         }
+
+        // Function to handle custom selection logic
+        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+            const text = range.startContainer.textContent;
+
+            // Check if Ctrl + Shift + Arrow keys are pressed
+            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+                event.preventDefault(); // Prevent default behavior
+
+                let direction = event.key === 'ArrowRight' ? 1 : -1;
+                let newPos = range.endOffset;
+
+                // Search for the next comma or period in the correct direction
+                if (direction === 1) {
+                    let nextPunctuation = text.slice(newPos).search(/[,.]/);
+                    if (nextPunctuation !== -1) {
+                        newPos += nextPunctuation;
+                    }
+                } else {
+                    let prevText = text.slice(0, newPos);
+                    let prevPunctuation = prevText.lastIndexOf(',') > prevText.lastIndexOf('.') ? prevText.lastIndexOf(',') : prevText.lastIndexOf('.');
+                    if (prevPunctuation !== -1) {
+                        newPos = prevPunctuation;
+                    }
+                }
+
+                // Update the selection range
+                range.setEnd(range.startContainer, newPos);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        });
     </script>
 </body>
 </html>
