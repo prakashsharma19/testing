@@ -4,7 +4,122 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entry Workspace</title>
     <style>
-        /* (Existing styles here) */
+        body {
+            font-family: 'Times New Roman', serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            overflow: auto;
+        }
+        h2 {
+            color: #333;
+        }
+        textarea#textInput {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            font-size: 18px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            resize: vertical;
+        }
+        div#outputContainer {
+            width: 100%;
+            height: 500px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            overflow-y: auto;
+            color: black;
+            font-size: 18px;
+            font-family: 'Times New Roman', serif;
+            white-space: pre-wrap;
+        }
+        button {
+            padding: 5px 10px;
+            font-size: 14px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-right: 5px;
+        }
+        button.blue {
+            background-color: #1E90FF;
+            color: white;
+        }
+        button.green {
+            background-color: #32CD32;
+            color: white;
+        }
+        button.red {
+            background-color: #FF6347;
+            color: white;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+        }
+        button.lock {
+            background-color: #696969;
+            color: white;
+        }
+        button.lock.locked {
+            background-color: red;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        #loading {
+            display: none;
+            color: red;
+        }
+        #fontOptions {
+            margin-top: 10px;
+        }
+        #fullPage {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+        }
+        #exitFullScreen {
+            display: none;
+            position: fixed;
+            bottom: 10px;
+            right: 20px;
+            z-index: 1001;
+        }
+        #copyButton {
+            background-color: #ffa500;
+            color: white;
+        }
+        #entryCount, #todaysEntry {
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        #todaysEntry {
+            top: 40px;
+        }
+        hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 10px 0;
+        }
+        #customRemoveSection {
+            margin-top: 20px;
+        }
+        #customRemoveSection input {
+            padding: 5px;
+            width: 200px;
+            font-size: 14px;
+        }
+        .highlight {
+            background-color: yellow;
+        }
     </style>
 </head>
 <body>
@@ -41,7 +156,156 @@
     </div>
 
     <script>
-        // (Existing code)
+        // LocalStorage keys
+        const TOTAL_ENTRIES_KEY = 'totalEntries';
+        const TODAYS_ENTRIES_KEY = 'todaysEntries';
+        const LAST_UPDATED_DATE_KEY = 'lastUpdatedDate';
+
+        let totalEntries = parseInt(localStorage.getItem(TOTAL_ENTRIES_KEY)) || 0;
+        let todaysEntries = parseInt(localStorage.getItem(TODAYS_ENTRIES_KEY)) || 0;
+        let lastUpdatedDate = localStorage.getItem(LAST_UPDATED_DATE_KEY) || new Date().toDateString();
+
+        // Check if it's a new day and reset today's entry if needed
+        function resetTodaysEntryIfNewDay() {
+            const currentDate = new Date().toDateString();
+            if (currentDate !== lastUpdatedDate) {
+                todaysEntries = 0;
+                lastUpdatedDate = currentDate;
+                localStorage.setItem(LAST_UPDATED_DATE_KEY, currentDate);
+                localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
+            }
+        }
+
+        // Update the UI with the current counts
+        function updateEntryDisplay() {
+            document.getElementById("entryCount").textContent = `Total Entries: ${totalEntries}`;
+            document.getElementById("todaysEntry").textContent = `Today's Entries: ${todaysEntries}`;
+        }
+
+        resetTodaysEntryIfNewDay();
+        updateEntryDisplay();
+
+        // Helper function to clean special characters (remove diacritics)
+        function removeDiacritics(str) {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        function advancedFixText() {
+            let inputText = document.getElementById("textInput").value;
+            let entries = inputText.split(/\n\s*\n/);
+            let output = '';
+
+            entries.forEach(entry => {
+                entry = entry.replace(/View the author's ORCID record/gi, '')
+                             .replace(/Corresponding author/gi, '')
+                             .replace(/https?:\/\/\S+/g, '')
+                             .replace(/(?<=\s)[.,](?=\s)/g, '') // Remove isolated punctuation
+                             .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
+                             .trim();
+
+                // Clean the text (remove diacritics)
+                entry = removeDiacritics(entry);
+
+                let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
+                let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
+
+                let nameMatch = entry.match(namePattern);
+                let emailMatch = entry.match(emailPattern);
+                let formattedEntry = '';
+
+                if (nameMatch) formattedEntry += nameMatch[0] + '<br>';
+                formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
+                                       .replace(emailMatch ? emailMatch[0] : '', '')
+                                       .trim() + '<br>';
+                if (emailMatch) {
+                    formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
+                    totalEntries++; // Increment total entries
+                }
+
+                output += formattedEntry + '<br>';
+            });
+
+            document.getElementById("outputContainer").innerHTML = output;
+            localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
+            updateEntryDisplay();
+        }
+
+        function cleanText() {
+            document.getElementById("loading").style.display = "inline";
+            setTimeout(() => {
+                let inputText = document.getElementById("textInput").value;
+
+                inputText = inputText.replace(/View the author's ORCID record/gi, '')
+                                     .replace(/Corresponding author/gi, '')
+                                     .replace(/https?:\/\/\S+/g, '')
+                                     .replace(/(?<=\s)[.,](?=\s)/g, '') // Remove isolated punctuation
+                                     .replace(/(?<=^|\n)[.,](?=\s|$)/g, '') // Remove isolated punctuation at beginning
+                                     .trim();
+
+                // Clean the text (remove diacritics)
+                inputText = removeDiacritics(inputText);
+
+                document.getElementById("outputContainer").innerText = inputText;
+
+                document.getElementById("loading").style.display = "none";
+            }, 1000);
+        }
+
+        function copyText() {
+            const outputContainer = document.getElementById("outputContainer");
+            const selection = window.getSelection();
+            const range = document.createRange();
+            range.selectNodeContents(outputContainer);
+            selection.removeAllRanges();
+            selection.addRange(range);
+            document.execCommand("copy");
+            alert("Text copied to clipboard");
+        }
+
+        function toggleLock() {
+            const outputContainer = document.getElementById("outputContainer");
+            const lockButton = document.querySelector('.lock');
+            if (outputContainer.contentEditable === "true") {
+                outputContainer.contentEditable = "false";
+                lockButton.classList.add("locked");
+                lockButton.textContent = "Unlock";
+            } else {
+                outputContainer.contentEditable = "true";
+                lockButton.classList.remove("locked");
+                lockButton.textContent = "Lock";
+            }
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                document.getElementById("exitFullScreen").style.display = "block";
+            }
+        }
+
+        function exitFullScreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen();
+                document.getElementById("exitFullScreen").style.display = "none";
+            }
+        }
+
+        function changeFont() {
+            const font = document.getElementById("fontSelect").value;
+            document.getElementById("outputContainer").style.fontFamily = font;
+        }
+
+        function changeFontSize() {
+            const fontSize = document.getElementById("fontSize").value;
+            document.getElementById("outputContainer").style.fontSize = fontSize + "px";
+        }
+
+        function removeCustomText() {
+            const textToRemove = document.getElementById("removeText").value;
+            const outputContainer = document.getElementById("outputContainer");
+            const outputText = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
+            outputContainer.innerHTML = outputText;
+        }
 
         // Add handling for custom selection based on punctuation
         document.addEventListener('keydown', function(event) {
@@ -123,7 +387,6 @@
             localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
             updateEntryDisplay(); // Update the display count
         }
-
     </script>
 </body>
 </html>
