@@ -149,6 +149,7 @@
         <input type="number" id="fontSize" value="18" min="10" max="40" onchange="changeFontSize()">
     </div>
 
+    <!-- Section for removing custom phrases -->
     <div id="customRemoveSection">
         <label for="removeText">Enter text to remove:</label>
         <input type="text" id="removeText" placeholder="Enter text to remove">
@@ -307,85 +308,28 @@
             outputContainer.innerHTML = outputText;
         }
 
-        // Add handling for custom selection based on punctuation
-        document.addEventListener('keydown', function(event) {
-            if (event.ctrlKey && event.shiftKey && (event.key === "ArrowLeft" || event.key === "ArrowRight")) {
-                handlePunctuationSelection(event.key);
+        // Add "Professor" when "q" is pressed
+        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
+            if (event.key === 'q') {
+                event.preventDefault(); // Prevent the default "q" input
+                insertProfessorAtCaret();
             }
         });
 
-        function handlePunctuationSelection(direction) {
+        function insertProfessorAtCaret() {
             const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
             const range = selection.getRangeAt(0);
-            const textContent = outputContainer.textContent;
 
-            let cursorPos = range.startOffset;
-            if (direction === "ArrowLeft") {
-                // Select text until a punctuation or space is found
-                while (cursorPos > 0 && !isPunctuation(textContent[cursorPos - 1])) {
-                    cursorPos--;
-                }
-            } else if (direction === "ArrowRight") {
-                // Select text until the next punctuation or space is found
-                while (cursorPos < textContent.length && !isPunctuation(textContent[cursorPos])) {
-                    cursorPos++;
-                }
-            }
+            // Insert "Professor" at the current caret position
+            const textNode = document.createTextNode('Professor ');
+            range.insertNode(textNode);
 
-            range.setStart(outputContainer.firstChild, cursorPos);
+            // Move the caret to after the inserted text
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
             selection.removeAllRanges();
             selection.addRange(range);
-        }
-
-        function isPunctuation(char) {
-            const punctuation = /[.,!?;:]/;
-            return punctuation.test(char);
-        }
-
-        // Email navigation using Ctrl + Q
-        document.addEventListener('keydown', function(event) {
-            if (event.ctrlKey && event.key === 'q') {
-                event.preventDefault(); // Prevent the default action for Ctrl+Q
-                navigateToNextEmail();
-            }
-        });
-
-        let lastEmailIndex = 0; // Keep track of the last selected email
-
-        function navigateToNextEmail() {
-            const outputContainer = document.getElementById('outputContainer');
-            const emails = outputContainer.innerHTML.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi);
-            
-            if (emails && emails.length > 0) {
-                lastEmailIndex = (lastEmailIndex + 1) % emails.length; // Loop over the emails
-
-                const email = emails[lastEmailIndex];
-                highlightEmail(email);
-            }
-        }
-
-        function highlightEmail(email) {
-            const outputContainer = document.getElementById('outputContainer');
-            const highlightedContent = outputContainer.innerHTML.replace(/<span class="highlight">([^<]*)<\/span>/gi, '$1'); // Remove previous highlights
-            outputContainer.innerHTML = highlightedContent.replace(email, `<span class="highlight">${email}</span>`); // Highlight the current email
-        }
-
-        // Track email deletions and update today's entries
-        document.addEventListener('keydown', function(event) {
-            if ((event.ctrlKey && event.key === 'x') || (event.key === 'Delete')) {
-                const emailElement = document.querySelector('.highlight');
-                if (emailElement) {
-                    emailElement.remove(); // Remove highlighted email
-                    incrementTodaysEntries(); // Update today's entries count
-                }
-            }
-        });
-
-        function incrementTodaysEntries() {
-            todaysEntries += 1;
-            localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
-            updateEntryDisplay(); // Update the display count
         }
     </script>
 </body>
