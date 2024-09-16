@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -132,7 +131,7 @@
     <button id="copyButton" onclick="copyText()">Copy</button>
     <button class="lock" onclick="toggleLock()">Lock</button>
     <button id="fullPage" onclick="toggleFullScreen()">Full Screen</button>
-    <button id="exitFullScreen" onclick="exitFullScreen()">Exit Full Screen"></button>
+    <button id="exitFullScreen" onclick="exitFullScreen()">Exit Full Screen</button>
     <div id="entryCount">Total Entries: 0</div>
     <div id="todaysEntry">Today's Entries: 0</div>
     <br><br>
@@ -157,29 +156,57 @@
     </div>
 
     <script>
-        // Helper function to remove diacritics (for advanced cleaning)
+        const TOTAL_ENTRIES_KEY = 'totalEntries';
+        const TODAYS_ENTRIES_KEY = 'todaysEntries';
+        const LAST_UPDATED_DATE_KEY = 'lastUpdatedDate';
+        const OUTPUT_CONTAINER_KEY = 'outputContainerContent';
+
+        let totalEntries = parseInt(localStorage.getItem(TOTAL_ENTRIES_KEY)) || 0;
+        let todaysEntries = parseInt(localStorage.getItem(TODAYS_ENTRIES_KEY)) || 0;
+        let lastUpdatedDate = localStorage.getItem(LAST_UPDATED_DATE_KEY) || new Date().toDateString();
+
+        function resetTodaysEntryIfNewDay() {
+            const currentDate = new Date().toDateString();
+            if (currentDate !== lastUpdatedDate) {
+                todaysEntries = 0;
+                lastUpdatedDate = currentDate;
+                localStorage.setItem(LAST_UPDATED_DATE_KEY, currentDate);
+                localStorage.setItem(TODAYS_ENTRIES_KEY, todaysEntries);
+            }
+        }
+
+        function updateEntryDisplay() {
+            document.getElementById("entryCount").textContent = `Total Entries: ${totalEntries}`;
+            document.getElementById("todaysEntry").textContent = `Today's Entries: ${todaysEntries}`;
+        }
+
+        resetTodaysEntryIfNewDay();
+        updateEntryDisplay();
+
+        const savedContent = localStorage.getItem(OUTPUT_CONTAINER_KEY);
+        if (savedContent) {
+            document.getElementById('outputContainer').innerHTML = savedContent;
+        }
+
         function removeDiacritics(str) {
             return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
         function advancedFixText() {
             let inputText = document.getElementById("textInput").value;
-            let entries = inputText.split(/\n\s*\n/); // Split into entries by double newlines
+            let entries = inputText.split(/\n\s*\n/);
             let output = '';
 
             entries.forEach(entry => {
-                // Basic cleaning: remove URLs, isolated punctuation, etc.
                 entry = entry.replace(/View the author's ORCID record/gi, '')
                              .replace(/Corresponding author/gi, '')
                              .replace(/https?:\/\/\S+/g, '')
-                             .replace(/(?<=\s)[.,](?=\s)/g, '') 
+                             .replace(/(?<=\s)[.,](?=\s)/g, '')
                              .replace(/(?<=^|\n)[.,](?=\s|$)/g, '')
                              .trim();
 
-                // Remove diacritics
                 entry = removeDiacritics(entry);
 
-                // Find names and emails
                 let namePattern = /^([A-Z][a-z]+\s[A-Z][a-z]+)/;
                 let emailPattern = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,6}\b/gi;
 
@@ -187,35 +214,51 @@
                 let emailMatch = entry.match(emailPattern);
                 let formattedEntry = '';
 
-                // Display name if present
                 if (nameMatch) formattedEntry += nameMatch[0] + '<br>';
-
-                // Remove the name and email from the entry text and display the rest
                 formattedEntry += entry.replace(nameMatch ? nameMatch[0] : '', '')
                                        .replace(emailMatch ? emailMatch[0] : '', '')
                                        .trim() + '<br>';
-
-                // Display email as a mailto link if present
                 if (emailMatch) {
                     formattedEntry += '<a href="mailto:' + emailMatch[0] + '">' + emailMatch[0] + '</a><br>';
+                    totalEntries++;
                 }
 
                 output += formattedEntry + '<br>';
             });
 
-            // Update the output container with the processed text
             document.getElementById("outputContainer").innerHTML = output;
+            localStorage.setItem(TOTAL_ENTRIES_KEY, totalEntries);
+            updateEntryDisplay();
+            saveSession();
+        }
+
+        function cleanText() {
+            document.getElementById("loading").style.display = "inline";
+            setTimeout(() => {
+                let inputText = document.getElementById("textInput").value;
+
+                inputText = inputText.replace(/View the author's ORCID record/gi, '')
+                                     .replace(/Corresponding author/gi, '')
+                                     .replace(/https?:\/\/\S+/g, '')
+                                     .replace(/(?<=\s)[.,](?=\s)/g, '')
+                                     .replace(/(?<=^|\n)[.,](?=\s|$)/g, '')
+                                     .trim();
+
+                inputText = removeDiacritics(inputText);
+
+                document.getElementById("outputContainer").innerText = inputText;
+                saveSession();
+                document.getElementById("loading").style.display = "none";
+            }, 1000);
         }
 
         function copyText() {
             const outputContainer = document.getElementById("outputContainer");
-            const range = document.createRange();
             const selection = window.getSelection();
-
+            const range = document.createRange();
             range.selectNodeContents(outputContainer);
             selection.removeAllRanges();
             selection.addRange(range);
-
             document.execCommand("copy");
             alert("Text copied to clipboard");
         }
@@ -263,45 +306,25 @@
             const outputContainer = document.getElementById("outputContainer");
             const outputText = outputContainer.innerHTML.replace(new RegExp(textToRemove, 'gi'), '');
             outputContainer.innerHTML = outputText;
+            saveSession();
         }
 
-        // Key handling logic
-        function findNextPunctuation(text, startPos) {
-            const match = text.slice(startPos).match(/[,.]/);
-            return match ? startPos + match.index : text.length;
-        }
-
-        function modifySelection() {
+        function insertProfessorAtCaret() {
+            const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
             const range = selection.getRangeAt(0);
-            const text = range.startContainer.textContent;
 
-            const lineStart = text.lastIndexOf('\n', range.startOffset) + 1;
-            const lineEnd = text.indexOf('\n', range.startOffset) === -1 ? text.length : text.indexOf('\n', range.startOffset);
-            let punctuationEnd = findNextPunctuation(text, range.startOffset);
+            const textNode = document.createTextNode('Professor ');
+            range.insertNode(textNode);
 
-            if (punctuationEnd < lineEnd) {
-                lineEnd = punctuationEnd;
-            }
-
-            range.setStart(range.startContainer, lineStart);
-            range.setEnd(range.endContainer, lineEnd);
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
             selection.removeAllRanges();
             selection.addRange(range);
+
+            saveSession();
         }
 
-        function handleSelectionKeys(event) {
-            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
-                event.preventDefault();
-                modifySelection();
-            }
-        }
-
-        document.getElementById('outputContainer').addEventListener('keydown', handleSelectionKeys);
-
-        let keySequence = ''; // Track key sequences for qq and pr
-
-        // Email jump and autocomplete logic
         function jumpToNextEmail() {
             const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
@@ -323,44 +346,54 @@
             }
         }
 
-        function handleKeyPress(event) {
-            const key = event.key;
-
-            // Track key sequence
-            keySequence += key;
-
-            // "qq" for email jump
-            if (keySequence.endsWith('qq')) {
-                event.preventDefault();
-                jumpToNextEmail();
-                keySequence = ''; // Reset sequence
-            }
-
-            // "pr" for Professor autocomplete
-            if (keySequence.endsWith('pr')) {
-                event.preventDefault();
-                insertProfessorAtCaret();
-                keySequence = ''; // Reset sequence
-            }
-
-            // Clear key sequence after a short delay
-            setTimeout(() => { keySequence = ''; }, 500);
-        }
-
-        function insertProfessorAtCaret() {
+        // New feature: Modify text selection to stop before punctuation
+        document.getElementById('outputContainer').addEventListener('keydown', function(event) {
             const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
             const range = selection.getRangeAt(0);
+            const text = range.startContainer.textContent;
 
-            const textNode = document.createTextNode('Professor ');
-            range.insertNode(textNode);
-            range.setStartAfter(textNode);
-            range.setEndAfter(textNode);
+            if (event.ctrlKey && event.key === 'q') {
+                event.preventDefault();
+                jumpToNextEmail();
+            } else if (event.key === 'p' && event.altKey) {
+                event.preventDefault();
+                insertProfessorAtCaret();
+            } else if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+                event.preventDefault();
+                handlePunctuationSelection(event.key === 'ArrowRight');
+            }
+        });
+
+        function handlePunctuationSelection(isRightArrow) {
+            const selection = window.getSelection();
+            const range = selection.getRangeAt(0);
+            const text = range.startContainer.textContent;
+
+            let cursorPosition = range.startOffset;
+            let start = cursorPosition;
+            let end = cursorPosition;
+
+            if (isRightArrow) {
+                let nextPunctuation = text.slice(cursorPosition).search(/[.,]/);
+                end = nextPunctuation !== -1 ? cursorPosition + nextPunctuation : text.length;
+            } else {
+                let prevPunctuation = text.slice(0, cursorPosition).lastIndexOf(/[.,]/);
+                start = prevPunctuation !== -1 ? prevPunctuation + 1 : 0;
+            }
+
+            range.setStart(range.startContainer, start);
+            range.setEnd(range.startContainer, end);
             selection.removeAllRanges();
             selection.addRange(range);
         }
 
-        document.getElementById('outputContainer').addEventListener('keydown', handleKeyPress);
+        function saveSession() {
+            const outputContent = document.getElementById('outputContainer').innerHTML;
+            localStorage.setItem(OUTPUT_CONTAINER_KEY, outputContent);
+        }
+
+        document.getElementById('outputContainer').addEventListener('input', saveSession);
     </script>
 </body>
 </html>
