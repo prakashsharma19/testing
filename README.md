@@ -62,7 +62,7 @@
                 event.preventDefault();
                 
                 if (event.key === 'ArrowRight') {
-                    // Move to the right and select text up to punctuation or end of line
+                    // Move to the right and select text up to punctuation or extend to the next line
                     handleSelectionRight(selection, range, textNode, text, start, end);
                 } else if (event.key === 'ArrowLeft') {
                     // Move to the left and adjust the selection to stop before punctuation or start of line
@@ -73,15 +73,37 @@
 
         function handleSelectionRight(selection, range, textNode, text, start, end) {
             // Find the next punctuation or the end of the line
-            const remainingText = text.slice(end);
-            const nextPunctuation = remainingText.search(punctuationRegex);
+            let remainingText = text.slice(end);
+            let nextPunctuation = remainingText.search(punctuationRegex);
 
-            if (nextPunctuation !== -1) {
-                // If punctuation is found, select up to that punctuation
-                range.setEnd(textNode, end + nextPunctuation);
+            // If no punctuation in current line, check for next line
+            if (nextPunctuation === -1) {
+                // Check if there's more text after the current text node
+                let nextSibling = textNode.nextSibling;
+
+                while (nextSibling && nextSibling.textContent.trim() === "") {
+                    nextSibling = nextSibling.nextSibling; // Skip empty text nodes (whitespace)
+                }
+
+                if (nextSibling) {
+                    // Check next line for punctuation and update the range accordingly
+                    const nextLineText = nextSibling.textContent;
+                    const nextLinePunctuation = nextLineText.search(punctuationRegex);
+
+                    if (nextLinePunctuation !== -1) {
+                        // If punctuation found in next line, extend selection up to it
+                        range.setEnd(nextSibling, nextLinePunctuation);
+                    } else {
+                        // If no punctuation, extend selection to the end of the next line
+                        range.setEnd(nextSibling, nextLineText.length);
+                    }
+                } else {
+                    // If no more lines, just select to the end of the current text
+                    range.setEnd(textNode, text.length);
+                }
             } else {
-                // If no punctuation is found, select until the end of the line
-                range.setEnd(textNode, text.length);
+                // If punctuation found in the current line, select up to that punctuation
+                range.setEnd(textNode, end + nextPunctuation);
             }
 
             // Update the selection with the new range
