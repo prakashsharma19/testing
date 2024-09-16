@@ -1,126 +1,73 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entry Workspace with Custom Selection</title>
+    <title>Author Formatter</title>
     <style>
         body {
-            font-family: 'Times New Roman', serif;
+            font-family: Arial, sans-serif;
             margin: 20px;
-            background-color: #f4f4f9;
-            overflow: auto;
         }
-        #outputContainer {
+        textarea {
             width: 100%;
-            height: 500px;
+            height: 150px;
+        }
+        button {
+            margin: 20px 0;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        pre {
+            background: #f4f4f4;
             padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            background-color: #fff;
-            overflow-y: auto;
-            color: black;
-            font-size: 18px;
-            font-family: 'Times New Roman', serif;
             white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
-    <h2>Entry Workspace</h2>
-    <div id="outputContainer" contenteditable="true">
-        This is a test line, with punctuation.
-        Here is another sentence without punctuation
-        And another one.
-        Let's test it properly, now.
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/rangy/1.3.0/rangy-core.min.js"></script>
+    <h1>Author Formatter</h1>
+    <textarea id="inputText" placeholder="Paste author details here..."></textarea>
+    <br>
+    <button onclick="formatText()">Format and Sort</button>
+    <h2>Formatted Author Details:</h2>
+    <pre id="outputText"></pre>
 
     <script>
-        rangy.init(); // Initialize Rangy
+        function formatText() {
+            let inputText = document.getElementById("inputText").value.trim();
 
-        const punctuationRegex = /[.,!?]/;
+            // Remove URLs
+            let cleanedText = inputText.replace(/https?:\/\/\S+/g, '');
 
-        document.getElementById('outputContainer').addEventListener('keydown', handleKeyPress);
+            // Extract lines and remove empty lines
+            let lines = cleanedText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
-        function handleKeyPress(event) {
-            const selection = rangy.getSelection();
-            if (selection.rangeCount === 0) return;
+            // Initialize variables
+            let name = '';
+            let affiliations = [];
+            let email = '';
 
-            const range = selection.getRangeAt(0);
-            const textNode = range.startContainer;
-            const text = textNode.textContent;
-            let start = range.startOffset;
-            let end = range.endOffset;
-
-            // Check if Ctrl + Shift + Arrow key is pressed
-            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
-                event.preventDefault();
-                
-                if (event.key === 'ArrowRight') {
-                    // Move to the right and select text up to punctuation or extend to the next line
-                    handleSelectionRight(selection, range, textNode, text, start, end);
-                } else if (event.key === 'ArrowLeft') {
-                    // Move to the left and adjust the selection to stop before punctuation or start of line
-                    handleSelectionLeft(selection, range, textNode, text, start);
+            // Process lines
+            lines.forEach(line => {
+                if (line.includes('Corresponding author at:')) {
+                    affiliations.push(line.replace('Corresponding author at:', '').trim());
+                } else if (line.includes('@')) {
+                    email = line;
+                } else if (!name) {
+                    name = line;
+                } else {
+                    affiliations.push(line);
                 }
-            }
-        }
+            });
 
-        function handleSelectionRight(selection, range, textNode, text, start, end) {
-            const remainingText = text.slice(end);
-            const nextPunctuation = remainingText.search(punctuationRegex);
+            // Format the result
+            let formattedText = `${name}\n`;
+            formattedText += affiliations.join('\n') + '\n';
+            formattedText += email;
 
-            // First stop at the end of the current line but before any punctuation
-            if (end < text.length && nextPunctuation !== -1) {
-                // Stop at the punctuation mark if found
-                range.setEnd(textNode, end + nextPunctuation);
-            } else if (end < text.length && nextPunctuation === -1) {
-                // No punctuation in the current line, go to the end of the line
-                range.setEnd(textNode, text.length);
-            } else {
-                // Second phase: Extend selection into the next line
-                let nextSibling = textNode.nextSibling;
-
-                // Skip empty text nodes (whitespace between lines)
-                while (nextSibling && nextSibling.textContent.trim() === "") {
-                    nextSibling = nextSibling.nextSibling;
-                }
-
-                if (nextSibling) {
-                    // Check next line for punctuation
-                    const nextLineText = nextSibling.textContent;
-                    const nextLinePunctuation = nextLineText.search(punctuationRegex);
-
-                    if (nextLinePunctuation !== -1) {
-                        // If punctuation found in the next line, extend selection up to it
-                        range.setEnd(nextSibling, nextLinePunctuation);
-                    } else {
-                        // If no punctuation, extend selection to the end of the next line
-                        range.setEnd(nextSibling, nextLineText.length);
-                    }
-                }
-            }
-
-            // Update the selection with the new range
-            selection.setSingleRange(range);
-        }
-
-        function handleSelectionLeft(selection, range, textNode, text, start) {
-            // Find the previous punctuation or start of the line
-            const previousText = text.slice(0, start);
-            const prevPunctuation = previousText.lastIndexOf(punctuationRegex);
-
-            if (prevPunctuation !== -1) {
-                // If punctuation is found, select up to that punctuation
-                range.setStart(textNode, prevPunctuation + 1);
-            } else {
-                // If no punctuation, select to the start of the line
-                range.setStart(textNode, 0);
-            }
-
-            // Update the selection with the new range
-            selection.setSingleRange(range);
+            // Display the result
+            document.getElementById("outputText").innerText = formattedText;
         }
     </script>
 </body>
