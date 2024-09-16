@@ -24,9 +24,6 @@
             font-family: 'Times New Roman', serif;
             white-space: pre-wrap;
         }
-        .highlight {
-            background-color: yellow;
-        }
     </style>
 </head>
 <body>
@@ -72,17 +69,17 @@
         }
 
         function handleSelectionRight(selection, range, textNode, text, start, end) {
-            // Find the next punctuation or the end of the line
-            let remainingText = text.slice(end);
-            let nextPunctuation = remainingText.search(punctuationRegex);
-
-            // If no punctuation in current line, check for next line
-            if (nextPunctuation === -1) {
-                // Check if there's more text after the current text node
+            // First phase: Stop at the end of the current line first
+            if (end < text.length) {
+                // If not already at the end of the line, move selection to the end of the current line
+                range.setEnd(textNode, text.length);
+            } else {
+                // Second phase: Check if the selection should extend to the next line
                 let nextSibling = textNode.nextSibling;
 
+                // Skip empty text nodes (whitespace between lines)
                 while (nextSibling && nextSibling.textContent.trim() === "") {
-                    nextSibling = nextSibling.nextSibling; // Skip empty text nodes (whitespace)
+                    nextSibling = nextSibling.nextSibling;
                 }
 
                 if (nextSibling) {
@@ -97,13 +94,7 @@
                         // If no punctuation, extend selection to the end of the next line
                         range.setEnd(nextSibling, nextLineText.length);
                     }
-                } else {
-                    // If no more lines, just select to the end of the current text
-                    range.setEnd(textNode, text.length);
                 }
-            } else {
-                // If punctuation found in the current line, select up to that punctuation
-                range.setEnd(textNode, end + nextPunctuation);
             }
 
             // Update the selection with the new range
