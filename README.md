@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -206,10 +207,6 @@
             document.getElementById("outputContainer").innerHTML = output;
         }
 
-        function cleanText() {
-            // Simple cleaning function can go here
-        }
-
         function copyText() {
             const outputContainer = document.getElementById("outputContainer");
             const range = document.createRange();
@@ -302,8 +299,9 @@
 
         document.getElementById('outputContainer').addEventListener('keydown', handleSelectionKeys);
 
-        let lastKeyPressed = null;
+        let keySequence = ''; // Track key sequences for qq and pr
 
+        // Email jump and autocomplete logic
         function jumpToNextEmail() {
             const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
@@ -325,19 +323,29 @@
             }
         }
 
-        function handleEmailShortcut(event) {
-            if (event.key === 'q') {
-                if (lastKeyPressed === 'q') {
-                    event.preventDefault();
-                    jumpToNextEmail();
-                }
-                lastKeyPressed = 'q';
-            } else {
-                lastKeyPressed = null;
-            }
-        }
+        function handleKeyPress(event) {
+            const key = event.key;
 
-        document.getElementById('outputContainer').addEventListener('keydown', handleEmailShortcut);
+            // Track key sequence
+            keySequence += key;
+
+            // "qq" for email jump
+            if (keySequence.endsWith('qq')) {
+                event.preventDefault();
+                jumpToNextEmail();
+                keySequence = ''; // Reset sequence
+            }
+
+            // "pr" for Professor autocomplete
+            if (keySequence.endsWith('pr')) {
+                event.preventDefault();
+                insertProfessorAtCaret();
+                keySequence = ''; // Reset sequence
+            }
+
+            // Clear key sequence after a short delay
+            setTimeout(() => { keySequence = ''; }, 500);
+        }
 
         function insertProfessorAtCaret() {
             const outputContainer = document.getElementById('outputContainer');
@@ -352,15 +360,7 @@
             selection.addRange(range);
         }
 
-        function handleAutocomplete(event) {
-            if (lastKeyPressed === 'p' && event.key === 'r') {
-                event.preventDefault();
-                insertProfessorAtCaret();
-            }
-            lastKeyPressed = event.key;
-        }
-
-        document.getElementById('outputContainer').addEventListener('keydown', handleAutocomplete);
+        document.getElementById('outputContainer').addEventListener('keydown', handleKeyPress);
     </script>
 </body>
 </html>
