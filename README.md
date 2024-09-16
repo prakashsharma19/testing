@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -23,6 +24,11 @@
             white-space: pre-wrap;
             border: 1px solid #ddd;
             border-radius: 4px;
+            word-wrap: break-word;
+        }
+        .email {
+            color: blue;
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -38,12 +44,10 @@
         function formatText() {
             let inputText = document.getElementById("inputText").value.trim();
 
-            // Remove URLs
-            let cleanedText = inputText.replace(/https?:\/\/\S+/g, '');
-
-            // Remove specific unwanted texts
-            cleanedText = cleanedText.replace(/Corresponding author at:/gi, '')
-                                     .replace(/ORCID:\s*\S*/gi, '');
+            // Remove URLs and unwanted texts like "Corresponding author at:" and "ORCID"
+            let cleanedText = inputText.replace(/https?:\/\/\S+/g, '')
+                                       .replace(/Corresponding author at:/gi, '')
+                                       .replace(/ORCID:\s*\S*/gi, '');
 
             // Extract lines and remove empty lines
             let lines = cleanedText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
@@ -68,11 +72,11 @@
             let formattedText = `${name}\n`;
             formattedText += affiliations.join('\n') + '\n';
             if (email) {
-                formattedText += email;
+                formattedText += `<a href="mailto:${email}" class="email">${email}</a>`;
             }
 
             // Display the result
-            document.getElementById("outputText").innerText = formattedText;
+            document.getElementById("outputText").innerHTML = formattedText;
         }
     </script>
 </body>
