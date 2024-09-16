@@ -1,83 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Author Formatter</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        textarea {
-            width: 100%;
-            height: 150px;
-            margin-bottom: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-        }
-        pre {
-            background: #f4f4f4;
-            padding: 10px;
-            white-space: pre-wrap;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            word-wrap: break-word;
-        }
-        .email {
-            color: blue;
-            text-decoration: underline;
-        }
-    </style>
+  <title>Author Detail Formatter</title>
+  <style>
+    #output-div {
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+  </style>
 </head>
 <body>
-    <h1>Author Formatter</h1>
-    <textarea id="inputText" placeholder="Paste author details here..."></textarea>
-    <br>
-    <button onclick="formatText()">Format and Sort</button>
-    <h2>Formatted Author Details:</h2>
-    <pre id="outputText"></pre>
+  <textarea id="input-textarea" rows="10" cols="50"></textarea>
+  <button onclick="formatAuthorDetails()">Format</button>
+  <div id="output-div"></div>
+  <script>
+    function formatAuthorDetails() {
+      const inputTextarea = document.getElementById('input-textarea');
+      const outputDiv = document.getElementById('output-div');
 
-    <script>
-        function formatText() {
-            let inputText = document.getElementById("inputText").value.trim();
+      const inputText = inputTextarea.value;
 
-            // Remove URLs and unwanted texts like "Corresponding author at:" and "ORCID"
-            let cleanedText = inputText.replace(/https?:\/\/\S+/g, '')
-                                       .replace(/Corresponding author at:/gi, '')
-                                       .replace(/ORCID:\s*\S*/gi, '');
+      // Regular expressions to extract fields
+      const nameRegex = /^(.*?)\s/;
+      const scopusIdRegex = /https:\/\/www.scopus\.com\/authid\/detail\.uri\?authorId=(\d+)/;
+      const affiliationRegex = /(?:Energy School|Key Laboratory of Western Mines and Hazards Prevention).*?\bXi'an\b.*?(\d{6})/;
+      const emailRegex = /\b\S+@\S+\.\S+\b/;
 
-            // Extract lines and remove empty lines
-            let lines = cleanedText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      // Parse the input and extract fields
+      const nameMatch = inputText.match(nameRegex);
+      const scopusIdMatch = inputText.match(scopusIdRegex);
+      const affiliationMatches = inputText.matchAll(affiliationRegex);
+      const emailMatch = inputText.match(emailRegex);
 
-            // Initialize variables
-            let name = '';
-            let affiliations = [];
-            let email = '';
+      // Create a formatted output string
+      let output = "<table>\n";
+      output += "<tr><th>Field</th><th>Value</th></tr>\n";
+      output += `<tr><td>Name</td><td>${nameMatch ? nameMatch[1] : 'N/A'}</td></tr>\n`;
+      output += `<tr><td>Scopus ID URL</td><td>${scopusIdMatch ? `<a href="${scopusIdMatch[0]}">${scopusIdMatch[0]}</a>` : 'N/A'}</td></tr>\n`;
+      for (const affiliationMatch of affiliationMatches) {
+        output += `<tr><td>Affiliation</td><td>${affiliationMatch[0]}</td></tr>\n`;
+      }
+      output += `<tr><td>Email</td><td>${emailMatch ? emailMatch[0] : 'N/A'}</td></tr>\n`;
+      output += "</table>";
 
-            // Process lines
-            lines.forEach(line => {
-                if (line.includes('@')) {
-                    email = line;
-                } else if (!name) {
-                    name = line;
-                } else {
-                    affiliations.push(line);
-                }
-            });
-
-            // Format the result
-            let formattedText = `${name}\n`;
-            formattedText += affiliations.join('\n') + '\n';
-            if (email) {
-                formattedText += `<a href="mailto:${email}" class="email">${email}</a>`;
-            }
-
-            // Display the result
-            document.getElementById("outputText").innerHTML = formattedText;
-        }
-    </script>
+      // Update the output div
+      outputDiv.innerHTML = output;
+    }
+  </script>
 </body>
 </html>
