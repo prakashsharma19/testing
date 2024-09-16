@@ -1,9 +1,8 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>testing</title>
+    <title>Author Formatter</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,9 +11,9 @@
         textarea {
             width: 100%;
             height: 150px;
+            margin-bottom: 10px;
         }
         button {
-            margin: 20px 0;
             padding: 10px 20px;
             font-size: 16px;
         }
@@ -22,6 +21,8 @@
             background: #f4f4f4;
             padding: 10px;
             white-space: pre-wrap;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -40,6 +41,10 @@
             // Remove URLs
             let cleanedText = inputText.replace(/https?:\/\/\S+/g, '');
 
+            // Remove specific unwanted texts
+            cleanedText = cleanedText.replace(/Corresponding author at:/gi, '')
+                                     .replace(/ORCID:\s*\S*/gi, '');
+
             // Extract lines and remove empty lines
             let lines = cleanedText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
 
@@ -50,9 +55,7 @@
 
             // Process lines
             lines.forEach(line => {
-                if (line.includes('Corresponding author at:')) {
-                    affiliations.push(line.replace('Corresponding author at:', '').trim());
-                } else if (line.includes('@')) {
+                if (line.includes('@')) {
                     email = line;
                 } else if (!name) {
                     name = line;
@@ -64,7 +67,9 @@
             // Format the result
             let formattedText = `${name}\n`;
             formattedText += affiliations.join('\n') + '\n';
-            formattedText += email;
+            if (email) {
+                formattedText += email;
+            }
 
             // Display the result
             document.getElementById("outputText").innerText = formattedText;
