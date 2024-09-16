@@ -212,12 +212,18 @@
             }
         }
 
+        let lastKeyPressed = null;
+
         function handleEmailShortcut(event) {
-            if (event.key === 'q' && window._lastKey === 'q') {
-                event.preventDefault();
-                jumpToNextEmail();
+            if (event.key === 'q') {
+                if (lastKeyPressed === 'q') {
+                    event.preventDefault();
+                    jumpToNextEmail();
+                }
+                lastKeyPressed = 'q';
+            } else {
+                lastKeyPressed = null;
             }
-            window._lastKey = event.key;
         }
 
         document.getElementById('outputContainer').addEventListener('keydown', handleEmailShortcut);
@@ -236,11 +242,11 @@
         }
 
         function handleAutocomplete(event) {
-            if (window._lastKey === 'p' && event.key === 'r') {
+            if (lastKeyPressed === 'p' && event.key === 'r') {
                 event.preventDefault();
                 insertProfessorAtCaret();
             }
-            window._lastKey = event.key;
+            lastKeyPressed = event.key;
         }
 
         document.getElementById('outputContainer').addEventListener('keydown', handleAutocomplete);
