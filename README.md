@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -346,7 +347,7 @@
             }
         }
 
-        // New feature: Modify text selection to stop before punctuation
+        // New feature: Modify text selection to allow extending beyond punctuation to next line
         document.getElementById('outputContainer').addEventListener('keydown', function(event) {
             const outputContainer = document.getElementById('outputContainer');
             const selection = window.getSelection();
@@ -368,22 +369,55 @@
         function handlePunctuationSelection(isRightArrow) {
             const selection = window.getSelection();
             const range = selection.getRangeAt(0);
-            const text = range.startContainer.textContent;
-
+            let node = range.startContainer;
             let cursorPosition = range.startOffset;
-            let start = cursorPosition;
-            let end = cursorPosition;
 
             if (isRightArrow) {
-                let nextPunctuation = text.slice(cursorPosition).search(/[.,]/);
-                end = nextPunctuation !== -1 ? cursorPosition + nextPunctuation : text.length;
+                // Traverse forward to find next punctuation or line break
+                while (node) {
+                    let text = node.textContent;
+                    let nextPunctuation = text.slice(cursorPosition).search(/[.,]/);
+                    let nextLineBreak = text.slice(cursorPosition).search(/\n/);
+
+                    if (nextPunctuation !== -1 && nextLineBreak !== -1) {
+                        nextPunctuation = Math.min(nextPunctuation, nextLineBreak);
+                    } else if (nextLineBreak !== -1) {
+                        nextPunctuation = nextLineBreak;
+                    }
+
+                    if (nextPunctuation !== -1) {
+                        cursorPosition += nextPunctuation;
+                        range.setEnd(node, cursorPosition);
+                        break;
+                    } else {
+                        cursorPosition = 0;
+                        node = node.nextSibling;
+                    }
+                }
             } else {
-                let prevPunctuation = text.slice(0, cursorPosition).lastIndexOf(/[.,]/);
-                start = prevPunctuation !== -1 ? prevPunctuation + 1 : 0;
+                // Traverse backward to find previous punctuation or line break
+                while (node) {
+                    let text = node.textContent;
+                    let prevPunctuation = text.slice(0, cursorPosition).lastIndexOf(/[.,]/);
+                    let prevLineBreak = text.slice(0, cursorPosition).lastIndexOf(/\n/);
+
+                    if (prevPunctuation !== -1 && prevLineBreak !== -1) {
+                        prevPunctuation = Math.max(prevPunctuation, prevLineBreak);
+                    } else if (prevLineBreak !== -1) {
+                        prevPunctuation = prevLineBreak;
+                    }
+
+                    if (prevPunctuation !== -1) {
+                        cursorPosition = prevPunctuation + 1;
+                        range.setStart(node, cursorPosition);
+                        break;
+                    } else {
+                        cursorPosition = node.length;
+                        node = node.previousSibling;
+                    }
+                }
             }
 
-            range.setStart(range.startContainer, start);
-            range.setEnd(range.startContainer, end);
             selection.removeAllRanges();
             selection.addRange(range);
         }
