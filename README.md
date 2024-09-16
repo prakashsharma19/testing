@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -69,12 +68,18 @@
         }
 
         function handleSelectionRight(selection, range, textNode, text, start, end) {
-            // First phase: Stop at the end of the current line first
-            if (end < text.length) {
-                // If not already at the end of the line, move selection to the end of the current line
+            const remainingText = text.slice(end);
+            const nextPunctuation = remainingText.search(punctuationRegex);
+
+            // First stop at the end of the current line but before any punctuation
+            if (end < text.length && nextPunctuation !== -1) {
+                // Stop at the punctuation mark if found
+                range.setEnd(textNode, end + nextPunctuation);
+            } else if (end < text.length && nextPunctuation === -1) {
+                // No punctuation in the current line, go to the end of the line
                 range.setEnd(textNode, text.length);
             } else {
-                // Second phase: Check if the selection should extend to the next line
+                // Second phase: Extend selection into the next line
                 let nextSibling = textNode.nextSibling;
 
                 // Skip empty text nodes (whitespace between lines)
@@ -83,12 +88,12 @@
                 }
 
                 if (nextSibling) {
-                    // Check next line for punctuation and update the range accordingly
+                    // Check next line for punctuation
                     const nextLineText = nextSibling.textContent;
                     const nextLinePunctuation = nextLineText.search(punctuationRegex);
 
                     if (nextLinePunctuation !== -1) {
-                        // If punctuation found in next line, extend selection up to it
+                        // If punctuation found in the next line, extend selection up to it
                         range.setEnd(nextSibling, nextLinePunctuation);
                     } else {
                         // If no punctuation, extend selection to the end of the next line
