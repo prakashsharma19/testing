@@ -1,8 +1,9 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entry Workspace with Rangy</title>
+    <title>Entry Workspace with Custom Selection</title>
     <style>
         body {
             font-family: 'Times New Roman', serif;
@@ -44,77 +45,63 @@
 
         const punctuationRegex = /[.,!?]/;
 
-        document.getElementById('outputContainer').addEventListener('mouseup', handleSelection);
         document.getElementById('outputContainer').addEventListener('keydown', handleKeyPress);
-
-        function handleSelection() {
-            const selection = rangy.getSelection();
-            if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                const text = range.startContainer.textContent;
-
-                // Get the current selection start and end
-                let start = range.startOffset;
-                let end = range.endOffset;
-
-                // Find punctuation in the selected text and adjust the selection
-                const punctuationIndexBeforeEnd = text.slice(start, end).search(punctuationRegex);
-
-                // Stop before the punctuation
-                if (punctuationIndexBeforeEnd !== -1) {
-                    range.setEnd(range.endContainer, start + punctuationIndexBeforeEnd);
-                    selection.setSingleRange(range);
-                }
-            }
-        }
 
         function handleKeyPress(event) {
             const selection = rangy.getSelection();
             if (selection.rangeCount === 0) return;
 
             const range = selection.getRangeAt(0);
-            const text = range.startContainer.textContent;
+            const textNode = range.startContainer;
+            const text = textNode.textContent;
             let start = range.startOffset;
             let end = range.endOffset;
 
-            if (event.shiftKey && event.key === 'ArrowRight') {
-                // Extend selection to include punctuation and next line
-                handleSelectionExpansionRight(selection, range, text, start, end);
-            } else if (event.shiftKey && event.key === 'ArrowLeft') {
-                // Handle selection contraction towards left
-                handleSelectionExpansionLeft(selection, range, text, start);
+            // Check if Ctrl + Shift + Arrow key is pressed
+            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+                event.preventDefault();
+                
+                if (event.key === 'ArrowRight') {
+                    // Move to the right and select text up to punctuation or end of line
+                    handleSelectionRight(selection, range, textNode, text, start, end);
+                } else if (event.key === 'ArrowLeft') {
+                    // Move to the left and adjust the selection to stop before punctuation or start of line
+                    handleSelectionLeft(selection, range, textNode, text, start);
+                }
             }
         }
 
-        function handleSelectionExpansionRight(selection, range, text, start, end) {
-            // Find next punctuation or the next line's start
+        function handleSelectionRight(selection, range, textNode, text, start, end) {
+            // Find the next punctuation or the end of the line
             const remainingText = text.slice(end);
             const nextPunctuation = remainingText.search(punctuationRegex);
 
             if (nextPunctuation !== -1) {
-                // If punctuation is found, include it in the selection
-                range.setEnd(range.endContainer, end + nextPunctuation + 1); // Include the punctuation
+                // If punctuation is found, select up to that punctuation
+                range.setEnd(textNode, end + nextPunctuation);
             } else {
-                // If no punctuation, go to the end of the line
-                range.setEnd(range.endContainer, text.length);
+                // If no punctuation is found, select until the end of the line
+                range.setEnd(textNode, text.length);
             }
 
+            // Update the selection with the new range
             selection.setSingleRange(range);
         }
 
-        function handleSelectionExpansionLeft(selection, range, text, start) {
-            // Find previous punctuation or start of the line
+        function handleSelectionLeft(selection, range, textNode, text, start) {
+            // Find the previous punctuation or start of the line
             const previousText = text.slice(0, start);
             const prevPunctuation = previousText.lastIndexOf(punctuationRegex);
 
             if (prevPunctuation !== -1) {
-                // If punctuation is found, reduce selection before punctuation
-                range.setStart(range.startContainer, prevPunctuation + 1); // Move just after punctuation
+                // If punctuation is found, select up to that punctuation
+                range.setStart(textNode, prevPunctuation + 1);
             } else {
-                // If no punctuation, move to the start of the line
-                range.setStart(range.startContainer, 0);
+                // If no punctuation, select to the start of the line
+                range.setStart(textNode, 0);
             }
 
+            // Update the selection with the new range
             selection.setSingleRange(range);
         }
     </script>
