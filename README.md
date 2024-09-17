@@ -93,13 +93,28 @@
 
             if (nextPunctuation !== -1) {
                 // Punctuation found, set range to end at punctuation
-                range.setEnd(currentNode, currentEnd + nextPunctuation);
+                range.setEnd(currentNode, currentEnd + nextPunctuation + 1);
             } else {
                 // No punctuation, select entire line
                 range.setEnd(currentNode, currentText.length);
             }
 
             selection.setSingleRange(range);
+
+            // If at the end of the line, continue expanding to next lines on further ArrowRight presses
+            if (range.endOffset === currentText.length) {
+                const nextNode = getNextTextNode(currentNode);
+                if (nextNode) {
+                    const nextText = nextNode.textContent;
+                    const nextPunct = nextText.search(punctuationRegex);
+                    if (nextPunct !== -1) {
+                        range.setEnd(nextNode, nextPunct + 1);
+                    } else {
+                        range.setEnd(nextNode, nextText.length);
+                    }
+                    selection.setSingleRange(range);
+                }
+            }
         }
 
         function handleSelectionLeft(selection, range, textNode, start) {
@@ -120,7 +135,7 @@
 
             // Find the previous punctuation in the current line
             const previousText = currentText.slice(0, currentStart);
-            const prevPunctuation = previousText.lastIndexOf(punctuationRegex);
+            const prevPunctuation = previousText.search(punctuationRegex);
 
             if (prevPunctuation !== -1) {
                 // Punctuation found, set range to start after punctuation
