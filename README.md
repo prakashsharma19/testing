@@ -1,103 +1,130 @@
-<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Author Detail Formatter</title>
-  <style>
-    #output-div {
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-top: 10px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-    }
-    table, th, td {
-      border: 1px solid black;
-      padding: 8px;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entry Workspace with Custom Selection</title>
+    <style>
+        body {
+            font-family: 'Times New Roman', serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+            overflow: auto;
+        }
+        #outputContainer {
+            width: 100%;
+            height: 500px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            overflow-y: auto;
+            color: black;
+            font-size: 18px;
+            font-family: 'Times New Roman', serif;
+            white-space: pre-wrap;
+        }
+        .highlight {
+            background-color: yellow;
+        }
+    </style>
 </head>
 <body>
-  <h1>Author Detail Formatter</h1>
-  <textarea id="input-textarea" rows="10" cols="50" placeholder="Enter author details here..."></textarea>
-  <br>
-  <button onclick="formatAuthorDetails()">Format</button>
-  <div id="output-div"></div>
+    <h2>Entry Workspace</h2>
+    <div id="outputContainer" contenteditable="true">
+        This is a test line, with punctuation.
+        Here is another sentence without punctuation
+        And another one.
+        Let's test it properly, now.
+    </div>
 
-  <script>
-    function formatAuthorDetails() {
-      const inputTextarea = document.getElementById('input-textarea');
-      const outputDiv = document.getElementById('output-div');
-    
-      const inputText = inputTextarea.value.trim(); // Trim input to avoid extra spaces
-    
-      if (!inputText) {
-        outputDiv.innerHTML = "<p style='color: red;'>Please enter some author details.</p>";
-        return;
-      }
-    
-      // Split the input text into individual author details
-      const authorDetails = inputText.split(/\n\s*\n/); // Split by empty lines with optional spaces
-    
-      let output = "";
-      for (const detail of authorDetails) {
-        // Process each author detail
-        try {
-          const formattedDetail = processAuthorDetail(detail);
-          output += formattedDetail + "<br>";
-        } catch (error) {
-          output += `<p style="color: red;">Error processing detail: ${error.message}</p><br>`;
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/rangy/1.3.0/rangy-core.min.js"></script>
+
+    <script>
+        rangy.init(); // Initialize Rangy
+
+        const punctuationRegex = /[.,!?]/;
+
+        document.getElementById('outputContainer').addEventListener('keydown', handleKeyPress);
+
+        function handleKeyPress(event) {
+            const selection = rangy.getSelection();
+            if (selection.rangeCount === 0) return;
+
+            const range = selection.getRangeAt(0);
+            const textNode = range.startContainer;
+            const text = textNode.textContent;
+            let start = range.startOffset;
+            let end = range.endOffset;
+
+            // Check if Ctrl + Shift + Arrow key is pressed
+            if (event.ctrlKey && event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) {
+                event.preventDefault();
+                
+                if (event.key === 'ArrowRight') {
+                    // Move to the right and select text up to punctuation or extend to the next line
+                    handleSelectionRight(selection, range, textNode, text, start, end);
+                } else if (event.key === 'ArrowLeft') {
+                    // Move to the left and adjust the selection to stop before punctuation or start of line
+                    handleSelectionLeft(selection, range, textNode, text, start);
+                }
+            }
         }
-      }
-    
-      function processAuthorDetail(detail) {
-        // Regular expressions to extract fields
-        const nameRegex = /^(.*?)\s/;
-        const scopusIdRegex = /https:\/\/www.scopus\.com\/authid\/detail\.uri\?authorId=(\d+)/;
-        const affiliationRegex = /(?:Energy School|Key Laboratory of Western Mines and Hazards Prevention).*?\bXi'an\b.*?(\d{6})/;
-        const emailRegex = /\b\S+@\S+\.\S+\b/;
-    
-        // Parse the detail and extract fields
-        const nameMatch = detail.match(nameRegex);
-        const scopusIdMatch = detail.match(scopusIdRegex);
-        const affiliationMatches = detail.matchAll(affiliationRegex);
-        const emailMatch = detail.match(emailRegex);
-    
-        // Check if required fields are present and handle errors
-        if (!nameMatch) throw new Error("Name not found.");
-        if (!scopusIdMatch) throw new Error("Scopus ID not found.");
-        if (!emailMatch) throw new Error("Email not found.");
-    
-        // Create a formatted output string
-        let formattedDetail = "<table>\n";
-        formattedDetail += "<tr><th>Field</th><th>Value</th></tr>\n";
-        formattedDetail += `<tr><td>Name</td><td>${nameMatch[1]}</td></tr>\n`;
-        formattedDetail += `<tr><td>Scopus ID URL</td><td><a href="${scopusIdMatch[0]}">${scopusIdMatch[0]}</a></td></tr>\n`;
-    
-        let affiliationFound = false;
-        for (const affiliationMatch of affiliationMatches) {
-          formattedDetail += `<tr><td>Affiliation</td><td>${affiliationMatch[0]}</td></tr>\n`;
-          affiliationFound = true;
+
+        function handleSelectionRight(selection, range, textNode, text, start, end) {
+            // Find the next punctuation or the end of the line
+            let remainingText = text.slice(end);
+            let nextPunctuation = remainingText.search(punctuationRegex);
+
+            // If no punctuation in current line, check for next line
+            if (nextPunctuation === -1) {
+                // Check if there's more text after the current text node
+                let nextSibling = textNode.nextSibling;
+
+                while (nextSibling && nextSibling.textContent.trim() === "") {
+                    nextSibling = nextSibling.nextSibling; // Skip empty text nodes (whitespace)
+                }
+
+                if (nextSibling) {
+                    // Check next line for punctuation and update the range accordingly
+                    const nextLineText = nextSibling.textContent;
+                    const nextLinePunctuation = nextLineText.search(punctuationRegex);
+
+                    if (nextLinePunctuation !== -1) {
+                        // If punctuation found in next line, extend selection up to it
+                        range.setEnd(nextSibling, nextLinePunctuation);
+                    } else {
+                        // If no punctuation, extend selection to the end of the next line
+                        range.setEnd(nextSibling, nextLineText.length);
+                    }
+                } else {
+                    // If no more lines, just select to the end of the current text
+                    range.setEnd(textNode, text.length);
+                }
+            } else {
+                // If punctuation found in the current line, select up to that punctuation
+                range.setEnd(textNode, end + nextPunctuation);
+            }
+
+            // Update the selection with the new range
+            selection.setSingleRange(range);
         }
-        if (!affiliationFound) {
-          formattedDetail += "<tr><td>Affiliation</td><td>Affiliation not found</td></tr>\n";
+
+        function handleSelectionLeft(selection, range, textNode, text, start) {
+            // Find the previous punctuation or start of the line
+            const previousText = text.slice(0, start);
+            const prevPunctuation = previousText.lastIndexOf(punctuationRegex);
+
+            if (prevPunctuation !== -1) {
+                // If punctuation is found, select up to that punctuation
+                range.setStart(textNode, prevPunctuation + 1);
+            } else {
+                // If no punctuation, select to the start of the line
+                range.setStart(textNode, 0);
+            }
+
+            // Update the selection with the new range
+            selection.setSingleRange(range);
         }
-    
-        formattedDetail += `<tr><td>Email</td><td>${emailMatch[0]}</td></tr>\n`;
-        formattedDetail += "</table>";
-    
-        return formattedDetail;
-      }
-    
-      // Update the output div with the result
-      outputDiv.innerHTML = output;
-    }
-  </script>
+    </script>
 </body>
 </html>
