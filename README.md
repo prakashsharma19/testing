@@ -47,7 +47,7 @@
 
         document.getElementById('outputContainer').addEventListener('keydown', handleKeyPress);
 
-        let stopAtLineEnd = true; // Track when to stop at the line's end first, then continue
+        let stopAtLineEnd = true; // Tracks if we should stop at the line's end
 
         function handleKeyPress(event) {
             const selection = rangy.getSelection();
@@ -76,44 +76,36 @@
             let currentText = currentNode.textContent;
             let currentEnd = end;
 
-            // First time, stop at punctuation or end of current line
             if (stopAtLineEnd) {
                 const remainingText = currentText.slice(currentEnd);
                 const nextPunctuation = remainingText.search(punctuationRegex);
 
                 if (nextPunctuation !== -1) {
-                    // If punctuation found in the same line, stop at punctuation
+                    // Stop at punctuation
                     range.setEnd(currentNode, currentEnd + nextPunctuation + 1);
                 } else {
-                    // Otherwise, stop at the end of the line
+                    // Stop at the end of the current line
                     range.setEnd(currentNode, currentText.length);
                 }
 
-                stopAtLineEnd = false; // Next time, expand to next line
+                stopAtLineEnd = false; // Set this to false to allow further expansion
                 selection.setSingleRange(range);
                 return;
             }
 
-            // If the user presses ArrowRight again, move to the next line
-            stopAtLineEnd = true; // Reset for the next selection
+            // If already at line's end and user presses ArrowRight again, expand to next line
+            const nextNode = getNextTextNode(currentNode);
+            if (nextNode) {
+                const nextText = nextNode.textContent;
+                const nextPunctuation = nextText.search(punctuationRegex);
 
-            while (currentNode && currentEnd === currentText.length) {
-                const nextNode = getNextTextNode(currentNode);
-                if (!nextNode) break; // No more lines to expand to
-
-                currentNode = nextNode;
-                currentText = currentNode.textContent;
-                currentEnd = 0; // Start at the beginning of the next line
-            }
-
-            if (currentNode) {
-                const nextPunctuation = currentText.search(punctuationRegex);
                 if (nextPunctuation !== -1) {
-                    range.setEnd(currentNode, nextPunctuation + 1);
+                    range.setEnd(nextNode, nextPunctuation + 1);
                 } else {
-                    range.setEnd(currentNode, currentText.length);
+                    range.setEnd(nextNode, nextText.length);
                 }
 
+                stopAtLineEnd = true; // Reset to stop again at the new line's end
                 selection.setSingleRange(range);
             }
         }
