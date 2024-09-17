@@ -6,43 +6,80 @@
     #output-div {
       border: 1px solid #ccc;
       padding: 10px;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
     }
   </style>
 </head>
 <body>
-  <textarea id="input-textarea" rows="10" cols="50"></textarea>
+  <h1>Author Detail Formatter</h1>
+  <textarea id="input-textarea" rows="10" cols="50" placeholder="Enter author details here..."></textarea>
+  <br>
   <button onclick="formatAuthorDetails()">Format</button>
   <div id="output-div"></div>
+
   <script>
     function formatAuthorDetails() {
       const inputTextarea = document.getElementById('input-textarea');
       const outputDiv = document.getElementById('output-div');
-
+    
       const inputText = inputTextarea.value;
-
-      // Regular expressions to extract fields
-      const nameRegex = /^(.*?)\s/;
-      const scopusIdRegex = /https:\/\/www.scopus\.com\/authid\/detail\.uri\?authorId=(\d+)/;
-      const affiliationRegex = /(?:Energy School|Key Laboratory of Western Mines and Hazards Prevention).*?\bXi'an\b.*?(\d{6})/;
-      const emailRegex = /\b\S+@\S+\.\S+\b/;
-
-      // Parse the input and extract fields
-      const nameMatch = inputText.match(nameRegex);
-      const scopusIdMatch = inputText.match(scopusIdRegex);
-      const affiliationMatches = inputText.matchAll(affiliationRegex);
-      const emailMatch = inputText.match(emailRegex);
-
-      // Create a formatted output string
-      let output = "<table>\n";
-      output += "<tr><th>Field</th><th>Value</th></tr>\n";
-      output += `<tr><td>Name</td><td>${nameMatch ? nameMatch[1] : 'N/A'}</td></tr>\n`;
-      output += `<tr><td>Scopus ID URL</td><td>${scopusIdMatch ? `<a href="${scopusIdMatch[0]}">${scopusIdMatch[0]}</a>` : 'N/A'}</td></tr>\n`;
-      for (const affiliationMatch of affiliationMatches) {
-        output += `<tr><td>Affiliation</td><td>${affiliationMatch[0]}</td></tr>\n`;
+    
+      // Split the input text into individual author details
+      const authorDetails = inputText.split(/\n\s*\n/); // Split by empty lines with optional spaces
+    
+      let output = "";
+      for (const detail of authorDetails) {
+        // Process each author detail using the existing logic
+        const formattedDetail = processAuthorDetail(detail);
+        output += formattedDetail + "<br>"; // Add a newline after each formatted detail
       }
-      output += `<tr><td>Email</td><td>${emailMatch ? emailMatch[0] : 'N/A'}</td></tr>\n`;
-      output += "</table>";
-
+    
+      function processAuthorDetail(detail) {
+        // Regular expressions to extract fields
+        const nameRegex = /^(.*?)\s/;
+        const scopusIdRegex = /https:\/\/www.scopus\.com\/authid\/detail\.uri\?authorId=(\d+)/;
+        const affiliationRegex = /(?:Energy School|Key Laboratory of Western Mines and Hazards Prevention).*?\bXi'an\b.*?(\d{6})/;
+        const emailRegex = /\b\S+@\S+\.\S+\b/;
+    
+        // Parse the detail and extract fields
+        const nameMatch = detail.match(nameRegex);
+        const scopusIdMatch = detail.match(scopusIdRegex);
+        const affiliationMatches = detail.matchAll(affiliationRegex);
+        const emailMatch = detail.match(emailRegex);
+    
+        // Create a formatted output string
+        let formattedDetail = "<table>\n";
+        formattedDetail += "<tr><th>Field</th><th>Value</th></tr>\n";
+        if (nameMatch) {
+          formattedDetail += `<tr><td>Name</td><td>${nameMatch[1]}</td></tr>\n`;
+        }
+        if (scopusIdMatch) {
+          formattedDetail += `<tr><td>Scopus ID URL</td><td><a href="${scopusIdMatch[0]}">${scopusIdMatch[0]}</a></td></tr>\n`;
+        }
+        for (const affiliationMatch of affiliationMatches) {
+          formattedDetail += `<tr><td>Affiliation</td><td>${affiliationMatch[0]}</td></tr>\n`;
+        }
+        if (emailMatch) {
+          formattedDetail += `<tr><td>Email</td><td>${emailMatch[0]}</td></tr>\n`;
+        }
+        formattedDetail += "</table>";
+    
+        return formattedDetail;
+      }
+    
       // Update the output div
       outputDiv.innerHTML = output;
     }
