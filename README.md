@@ -35,16 +35,25 @@
       const inputTextarea = document.getElementById('input-textarea');
       const outputDiv = document.getElementById('output-div');
     
-      const inputText = inputTextarea.value;
+      const inputText = inputTextarea.value.trim(); // Trim input to avoid extra spaces
+    
+      if (!inputText) {
+        outputDiv.innerHTML = "<p style='color: red;'>Please enter some author details.</p>";
+        return;
+      }
     
       // Split the input text into individual author details
       const authorDetails = inputText.split(/\n\s*\n/); // Split by empty lines with optional spaces
     
       let output = "";
       for (const detail of authorDetails) {
-        // Process each author detail using the existing logic
-        const formattedDetail = processAuthorDetail(detail);
-        output += formattedDetail + "<br>"; // Add a newline after each formatted detail
+        // Process each author detail
+        try {
+          const formattedDetail = processAuthorDetail(detail);
+          output += formattedDetail + "<br>";
+        } catch (error) {
+          output += `<p style="color: red;">Error processing detail: ${error.message}</p><br>`;
+        }
       }
     
       function processAuthorDetail(detail) {
@@ -60,27 +69,33 @@
         const affiliationMatches = detail.matchAll(affiliationRegex);
         const emailMatch = detail.match(emailRegex);
     
+        // Check if required fields are present and handle errors
+        if (!nameMatch) throw new Error("Name not found.");
+        if (!scopusIdMatch) throw new Error("Scopus ID not found.");
+        if (!emailMatch) throw new Error("Email not found.");
+    
         // Create a formatted output string
         let formattedDetail = "<table>\n";
         formattedDetail += "<tr><th>Field</th><th>Value</th></tr>\n";
-        if (nameMatch) {
-          formattedDetail += `<tr><td>Name</td><td>${nameMatch[1]}</td></tr>\n`;
-        }
-        if (scopusIdMatch) {
-          formattedDetail += `<tr><td>Scopus ID URL</td><td><a href="${scopusIdMatch[0]}">${scopusIdMatch[0]}</a></td></tr>\n`;
-        }
+        formattedDetail += `<tr><td>Name</td><td>${nameMatch[1]}</td></tr>\n`;
+        formattedDetail += `<tr><td>Scopus ID URL</td><td><a href="${scopusIdMatch[0]}">${scopusIdMatch[0]}</a></td></tr>\n`;
+    
+        let affiliationFound = false;
         for (const affiliationMatch of affiliationMatches) {
           formattedDetail += `<tr><td>Affiliation</td><td>${affiliationMatch[0]}</td></tr>\n`;
+          affiliationFound = true;
         }
-        if (emailMatch) {
-          formattedDetail += `<tr><td>Email</td><td>${emailMatch[0]}</td></tr>\n`;
+        if (!affiliationFound) {
+          formattedDetail += "<tr><td>Affiliation</td><td>Affiliation not found</td></tr>\n";
         }
+    
+        formattedDetail += `<tr><td>Email</td><td>${emailMatch[0]}</td></tr>\n`;
         formattedDetail += "</table>";
     
         return formattedDetail;
       }
     
-      // Update the output div
+      // Update the output div with the result
       outputDiv.innerHTML = output;
     }
   </script>
