@@ -63,46 +63,90 @@
                 
                 if (event.key === 'ArrowRight') {
                     // Move to the right and select text up to punctuation or end of line
-                    handleSelectionRight(selection, range, textNode, text, start, end);
+                    handleSelectionRight(selection, range, textNode, start, end);
                 } else if (event.key === 'ArrowLeft') {
                     // Move to the left and adjust the selection to stop before punctuation or start of line
-                    handleSelectionLeft(selection, range, textNode, text, start);
+                    handleSelectionLeft(selection, range, textNode, start);
                 }
             }
         }
 
-        function handleSelectionRight(selection, range, textNode, text, start, end) {
-            // Find the next punctuation or the end of the line
-            const remainingText = text.slice(end);
+        function handleSelectionRight(selection, range, textNode, start, end) {
+            // Traverse forward and stop at punctuation or end of line
+            let currentNode = textNode;
+            let currentText = currentNode.textContent;
+            let currentEnd = end;
+
+            // Continue selecting lines until a punctuation is found or no more lines
+            while (currentNode && currentEnd === currentText.length) {
+                const nextNode = getNextTextNode(currentNode);
+                if (!nextNode) break;  // Stop if no more lines
+
+                currentNode = nextNode;
+                currentText = currentNode.textContent;
+                currentEnd = 0;  // Reset for new line
+            }
+
+            // Find the next punctuation in the current line
+            const remainingText = currentText.slice(currentEnd);
             const nextPunctuation = remainingText.search(punctuationRegex);
 
             if (nextPunctuation !== -1) {
-                // If punctuation is found, select up to that punctuation
-                range.setEnd(textNode, end + nextPunctuation);
+                // Punctuation found, set range to end at punctuation
+                range.setEnd(currentNode, currentEnd + nextPunctuation);
             } else {
-                // If no punctuation is found, select until the end of the line
-                range.setEnd(textNode, text.length);
+                // No punctuation, select entire line
+                range.setEnd(currentNode, currentText.length);
             }
 
-            // Update the selection with the new range
             selection.setSingleRange(range);
         }
 
-        function handleSelectionLeft(selection, range, textNode, text, start) {
-            // Find the previous punctuation or start of the line
-            const previousText = text.slice(0, start);
+        function handleSelectionLeft(selection, range, textNode, start) {
+            // Traverse backward and stop at punctuation or start of line
+            let currentNode = textNode;
+            let currentText = currentNode.textContent;
+            let currentStart = start;
+
+            // Continue selecting previous lines until punctuation or no more lines
+            while (currentNode && currentStart === 0) {
+                const prevNode = getPreviousTextNode(currentNode);
+                if (!prevNode) break;  // Stop if no more lines
+
+                currentNode = prevNode;
+                currentText = currentNode.textContent;
+                currentStart = currentText.length;  // Move to end of the previous line
+            }
+
+            // Find the previous punctuation in the current line
+            const previousText = currentText.slice(0, currentStart);
             const prevPunctuation = previousText.lastIndexOf(punctuationRegex);
 
             if (prevPunctuation !== -1) {
-                // If punctuation is found, select up to that punctuation
-                range.setStart(textNode, prevPunctuation + 1);
+                // Punctuation found, set range to start after punctuation
+                range.setStart(currentNode, prevPunctuation + 1);
             } else {
-                // If no punctuation, select to the start of the line
-                range.setStart(textNode, 0);
+                // No punctuation, select entire line
+                range.setStart(currentNode, 0);
             }
 
-            // Update the selection with the new range
             selection.setSingleRange(range);
+        }
+
+        function getNextTextNode(node) {
+            while (node && node.nextSibling) {
+                node = node.nextSibling;
+                if (node.nodeType === Node.TEXT_NODE) return node;
+            }
+            return null;
+        }
+
+        function getPreviousTextNode(node) {
+            while (node && node.previousSibling) {
+                node = node.previousSibling;
+                if (node.nodeType === Node.TEXT_NODE) return node;
+            }
+            return null;
         }
     </script>
 </body>
