@@ -45,9 +45,11 @@
                             selectionEnd = textContent.length; // Select until end of line if no space
                         }
 
-                        range.setEnd(endContainer, selectionEnd);
-                        selection.removeAllRanges();
-                        selection.addRange(range);
+                        if (selectionEnd > endOffset) {
+                            range.setEnd(endContainer, selectionEnd);
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                        }
                         event.preventDefault();
                     }
                 }
