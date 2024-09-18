@@ -188,19 +188,20 @@
             if (e.ctrlKey && e.shiftKey && e.key === 'ArrowRight') {
                 let selection = window.getSelection();
                 let range = selection.getRangeAt(0);
-
                 let content = range.startContainer.nodeValue;
                 let startPos = range.startOffset;
-                
+
                 if (content) {
-                    let nextPunctuationIndex = content.slice(startPos).search(/[,\.]/);
-                    
+                    let regex = /[,\.!?;]/g; // Punctuation marks to look for
+                    let remainingText = content.slice(startPos);
+                    let nextPunctuationIndex = remainingText.search(regex);
+
                     if (nextPunctuationIndex !== -1) {
                         nextPunctuationIndex += startPos;  // Adjust relative position to absolute
                     } else {
                         nextPunctuationIndex = content.length;  // If no punctuation, select till the end
                     }
-                    
+
                     range.setEnd(range.startContainer, nextPunctuationIndex);
                     selection.removeAllRanges();
                     selection.addRange(range);
