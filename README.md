@@ -196,13 +196,26 @@
                     let remainingText = content.slice(startPos);
                     let nextPunctuationIndex = remainingText.search(regex);
 
+                    // If punctuation is found, include it and move to the next phrase
                     if (nextPunctuationIndex !== -1) {
-                        nextPunctuationIndex += startPos;  // Adjust relative position to absolute
+                        nextPunctuationIndex += startPos; // Adjust to absolute position
+
+                        // Now find the next phrase after the punctuation
+                        let afterPunctuation = content.slice(nextPunctuationIndex + 1);
+                        let nextEndOfPhrase = afterPunctuation.search(regex);
+                        
+                        if (nextEndOfPhrase !== -1) {
+                            nextEndOfPhrase += nextPunctuationIndex + 1;
+                        } else {
+                            nextEndOfPhrase = content.length;
+                        }
+
+                        range.setEnd(range.startContainer, nextEndOfPhrase);
                     } else {
-                        nextPunctuationIndex = content.length;  // If no punctuation, select till the end
+                        // No punctuation found, select till the end
+                        range.setEnd(range.startContainer, content.length);
                     }
 
-                    range.setEnd(range.startContainer, nextPunctuationIndex);
                     selection.removeAllRanges();
                     selection.addRange(range);
 
