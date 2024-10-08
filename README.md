@@ -3,58 +3,104 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Line-Based Text Selection</title>
+    <title>Contact Management Tool</title>
     <style>
-        #selectableText {
-            font-size: 16px;
-            padding: 20px;
-            border: 1px solid #ccc;
-            white-space: pre-wrap; /* Keeps line breaks */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input[type="text"], input[type="email"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .error {
+            color: red;
         }
     </style>
 </head>
 <body>
-    <div id="selectableText" contenteditable="true">
-        This is a sample text. You can select it line by line. This is another line.
-        This is a phrase with punctuation. This is another phrase with punctuation.
-        This is a longer phrase that spans multiple lines.
-    </div>
+
+    <h1>Contact Management Tool</h1>
+    <form id="contactForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" required>
+
+        <label for="department">Department:</label>
+        <input type="text" id="department">
+
+        <label for="institute">Institute:</label>
+        <input type="text" id="institute">
+
+        <label for="country">Country:</label>
+        <input type="text" id="country">
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" required>
+
+        <button type="submit">Submit</button>
+        <div id="error" class="error"></div>
+    </form>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const selectableText = document.getElementById("selectableText");
+        const contactForm = document.getElementById('contactForm');
+        const errorDiv = document.getElementById('error');
 
-            selectableText.addEventListener("keydown", function (event) {
-                if (event.ctrlKey && event.shiftKey && event.key === "ArrowRight") {
-                    const selection = window.getSelection();
-                    const range = selection.getRangeAt(0);
-                    const endContainer = range.endContainer;
-                    const endOffset = range.endOffset;
+        contactForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent form submission
 
-                    if (endContainer.nodeType === Node.TEXT_NODE) {
-                        const textContent = endContainer.textContent;
+            const name = document.getElementById('name').value;
+            const department = document.getElementById('department').value;
+            const institute = document.getElementById('institute').value;
+            const country = document.getElementById('country').value;
+            const email = document.getElementById('email').value;
 
-                        // Find next space or end of line
-                        const nextSpace = textContent.indexOf(' ', endOffset);
-                        const nextLineBreak = textContent.indexOf('\n', endOffset);
-                        let selectionEnd = nextSpace;
+            // Clear previous error message
+            errorDiv.textContent = '';
 
-                        if (nextLineBreak !== -1 && (nextSpace === -1 || nextLineBreak < nextSpace)) {
-                            selectionEnd = nextLineBreak;
-                        } else if (nextSpace === -1) {
-                            selectionEnd = textContent.length; // Select until end of line if no space
-                        }
+            // Check for duplicate email
+            const duplicateCheckResponse = await fetch(`http://localhost:3000/api/contacts?email=${email}`);
+            const duplicateCheck = await duplicateCheckResponse.json();
 
-                        if (selectionEnd > endOffset) {
-                            range.setEnd(endContainer, selectionEnd);
-                            selection.removeAllRanges();
-                            selection.addRange(range);
-                        }
-                        event.preventDefault();
-                    }
-                }
+            if (duplicateCheck.exists) {
+                errorDiv.textContent = 'Error: Duplicate email entry found!';
+                return;
+            }
+
+            // If no duplicate, proceed to add contact
+            const response = await fetch('http://localhost:3000/api/contacts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, department, institute, country, email }),
             });
+
+            if (response.ok) {
+                alert('Contact added successfully!');
+                contactForm.reset();
+            } else {
+                errorDiv.textContent = 'Error: Unable to add contact.';
+            }
         });
     </script>
+
 </body>
 </html>
