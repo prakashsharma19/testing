@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -7,8 +8,10 @@
     body {
       font-family: Arial, sans-serif;
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start; /* Align left */
       padding: 20px;
+      width: 100%; /* Full width */
+      box-sizing: border-box; /* Include padding in width calculation */
     }
 
     .container {
@@ -16,8 +19,16 @@
       width: 100%;
     }
 
-    .left-section, .right-section {
-      width: 45%;
+    .left-section {
+      width: 60%; /* Larger left section */
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      margin-right: 20px; /* Space between sections */
+    }
+
+    .right-section {
+      width: 35%; /* Smaller right section */
       padding: 20px;
       border: 1px solid #ccc;
       border-radius: 5px;
@@ -54,10 +65,7 @@
     .sentence-container {
       margin-bottom: 10px;
       position: relative;
-    }
-
-    .bubble-container {
-      margin-bottom: 5px;
+      white-space: pre-wrap; /* Preserve whitespace and line breaks */
     }
 
     .right-section input {
@@ -81,6 +89,15 @@
     button:hover {
       background-color: #0056b3;
     }
+
+    .save-button {
+      margin-top: 10px;
+      background-color: #28a745; /* Green for Save */
+    }
+
+    .save-button:hover {
+      background-color: #218838;
+    }
   </style>
 </head>
 <body>
@@ -90,7 +107,6 @@
       <h3>Paste Text</h3>
       <textarea id="inputText" placeholder="Paste text here..."></textarea>
       <button onclick="processText()">Process</button>
-
       <div id="processedText">
         <!-- Sentences with bubbles will appear here -->
       </div>
@@ -116,6 +132,9 @@
 
       <label>Email</label>
       <input type="text" id="emailField">
+
+      <button class="save-button" onclick="saveEntries()">Save Entry</button>
+      <button onclick="extractEntries()">Extract File</button>
     </div>
   </div>
 
@@ -141,6 +160,8 @@
             "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
             "Vietnam", "Yemen", "Zambia", "Zimbabwe", "UK", "USA", "U.S.A.", "U. S. A.", "Korea", "UAE", "Hong Kong", "Ivory Coast", "Cote d'Ivoire", "Macau", "Macao", "Macedonia"];
 
+    let savedEntries = []; // Array to hold saved entries
+
     // Function to process the text and split it into sentences
     function processText() {
       const inputText = document.getElementById('inputText').value;
@@ -151,90 +172,75 @@
       processedTextDiv.innerHTML = '';  // Clear previous sentences
 
       sentences.forEach(sentence => {
-        const sentenceContainer = document.createElement('div');
-        sentenceContainer.classList.add('sentence-container');
-
-        const sentenceText = document.createElement('span');
-        sentenceText.textContent = sentence.trim();
-
-        const bubbleContainer = document.createElement('div');
-        bubbleContainer.classList.add('bubble-container');
-
-        // Create the bubbles for N, D, I, U, O, E
-        const bubbleTypes = ['N', 'D', 'I', 'U', 'O', 'E'];
-        bubbleTypes.forEach(type => {
-          const bubble = document.createElement('span');
-          bubble.classList.add('bubble', type);
-          bubble.textContent = type;
-
-          // When a bubble is clicked, move the sentence to the appropriate field
-          bubble.onclick = () => assignTextToField(sentenceText, type, sentenceContainer);
-          bubbleContainer.appendChild(bubble);
-        });
-
-        sentenceContainer.appendChild(bubbleContainer);
-        sentenceContainer.appendChild(sentenceText);
-        processedTextDiv.appendChild(sentenceContainer);
+        const sentenceDiv = document.createElement('div');
+        sentenceDiv.classList.add('sentence-container');
+        sentenceDiv.innerHTML = `${sentence} <span class="bubble N" onclick="addToField('nameField', this)">N</span>
+                                  <span class="bubble D" onclick="addToField('deptField', this)">D</span>
+                                  <span class="bubble I" onclick="addToField('instField', this)">I</span>
+                                  <span class="bubble U" onclick="addToField('uniField', this)">U</span>
+                                  <span class="bubble O" onclick="addToField('othersField', this)">O</span>
+                                  <span class="bubble E" onclick="addToField('emailField', this)">E</span>`;
+        processedTextDiv.appendChild(sentenceDiv);
       });
     }
 
-    // Function to split text into sentences but preserve country names
+    // Function to split the text into sentences
     function splitIntoSentences(text) {
-      const words = text.split(/\s+/); // Split by whitespace
-      const sentences = [];
-      let buffer = "";
-
-      words.forEach(word => {
-        const possibleCountry = buffer + (buffer ? " " : "") + word;
-        if (countries.includes(possibleCountry)) {
-          buffer = possibleCountry; // Country match, continue to build buffer
-        } else if (word.match(/[.,\n]$/)) {  // End of a sentence
-          buffer += (buffer ? " " : "") + word;  // Add word to buffer
-          sentences.push(buffer);  // Push the full sentence
-          buffer = "";  // Clear buffer
-        } else {
-          buffer += (buffer ? " " : "") + word;  // Continue sentence
-        }
-      });
-
-      if (buffer) sentences.push(buffer);  // Add remaining buffer if not empty
-      return sentences;
+      const regex = new RegExp(`([\\s\\S]*?(${countries.join('|')})[\\s\\S]*?)(?=\\n|$)`, 'g');
+      return text.split(regex).filter(Boolean).map(s => s.trim());
     }
 
-    // Function to assign text to the correct field and remove it from the processed area
-    function assignTextToField(textElement, fieldType, sentenceContainer) {
-      const text = textElement.textContent.trim();
-      let field;
-      
-      switch (fieldType) {
-        case 'N':
-          field = document.getElementById('nameField');
-          break;
-        case 'D':
-          field = document.getElementById('deptField');
-          break;
-        case 'I':
-          field = document.getElementById('instField');
-          break;
-        case 'U':
-          field = document.getElementById('uniField');
-          break;
-        case 'O':
-          field = document.getElementById('othersField');
-          break;
-        case 'E':
-          field = document.getElementById('emailField');
-          break;
-      }
+    // Function to add text to the appropriate field
+    function addToField(fieldId, bubble) {
+      const field = document.getElementById(fieldId);
+      const text = bubble.parentNode.childNodes[0].nodeValue.trim();
+      const existingText = field.value.trim();
 
-      if (field.value) {
-        field.value += ', ' + text;
+      if (existingText.length > 0) {
+        field.value += `, ${text}`; // Add comma when appending
       } else {
-        field.value = text;
+        field.value += text; // No comma for the first entry
       }
+    }
 
-      // Remove the sentence from the processed area
-      sentenceContainer.remove();
+    // Function to save entries into memory
+    function saveEntries() {
+      const name = document.getElementById('nameField').value.trim();
+      const dept = document.getElementById('deptField').value.trim();
+      const inst = document.getElementById('instField').value.trim();
+      const uni = document.getElementById('uniField').value.trim();
+      const others = document.getElementById('othersField').value.trim();
+      const email = document.getElementById('emailField').value.trim();
+
+      // Construct the entry
+      let entry = '';
+      if (name) entry += name + '\n';
+      if (dept) entry += dept + '\n';
+      if (inst) entry += inst + '\n';
+      if (uni) entry += uni + '\n';
+      if (others) entry += others + '\n';
+      if (email) entry += email;
+
+      // Save the entry to the array and clear fields
+      savedEntries.push(entry.trim());
+      clearFields();
+      alert('Entry saved successfully!');
+    }
+
+    // Function to clear the input fields
+    function clearFields() {
+      document.getElementById('nameField').value = '';
+      document.getElementById('deptField').value = '';
+      document.getElementById('instField').value = '';
+      document.getElementById('uniField').value = '';
+      document.getElementById('othersField').value = '';
+      document.getElementById('emailField').value = '';
+    }
+
+    // Function to extract saved entries
+    function extractEntries() {
+      const allEntries = savedEntries.join('\n\n'); // Join with double line breaks for separation
+      alert(allEntries || 'No entries saved.');
     }
   </script>
 </body>
