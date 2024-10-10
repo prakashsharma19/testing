@@ -7,8 +7,6 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      display: flex;
-      justify-content: space-between;
       padding: 20px;
       margin: 0;
       height: 100vh;
@@ -21,7 +19,7 @@
     }
 
     .left-section {
-      width: 70%;
+      width: 75%;  /* Make the left section wider */
       padding: 20px;
       border: 1px solid #ccc;
       border-radius: 5px;
@@ -31,7 +29,7 @@
     }
 
     .right-section {
-      width: 25%;
+      width: 23%;  /* Make the right section narrower */
       padding: 20px;
       border: 1px solid #ccc;
       border-radius: 5px;
@@ -174,7 +172,7 @@
             "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
             "Vietnam", "Yemen", "Zambia", "Zimbabwe", "UK", "USA", "U.S.A.", "U. S. A.", "Korea", "UAE", "Hong Kong", "Ivory Coast", "Cote d'Ivoire", "Macau", "Macao", "Macedonia"];
 
-    // Function to process the text and preserve line breaks
+    // Function to process the text and split it into smaller parts
     function processText() {
       const inputText = document.getElementById('inputText').value;
       const lines = inputText.split('\n'); // Split based on line breaks
@@ -182,12 +180,14 @@
       processedTextDiv.innerHTML = '';  // Clear previous sentences
 
       lines.forEach(line => {
-        if (line.trim()) {
-          const sentenceContainer = document.createElement('span');
-          sentenceContainer.classList.add('sentence-container');
+        const sentenceContainer = document.createElement('span');
+        sentenceContainer.classList.add('sentence-container');
 
+        // Split the line further by commas for better formatting
+        const fragments = line.split(',');
+        fragments.forEach((fragment, index) => {
           const sentenceText = document.createElement('span');
-          sentenceText.textContent = line.trim();
+          sentenceText.textContent = fragment.trim();
 
           // Add sentence text to the container
           sentenceContainer.appendChild(sentenceText);
@@ -204,13 +204,15 @@
             sentenceContainer.appendChild(bubble);
           });
 
-          // Add the sentence container to the processedText div
-          processedTextDiv.appendChild(sentenceContainer);
-          processedTextDiv.appendChild(document.createElement('br')); // Add line break for readability
-        } else {
-          // Add an empty line for double line breaks in the input
-          processedTextDiv.appendChild(document.createElement('br'));
-        }
+          // Add a break if not the last fragment
+          if (index < fragments.length - 1) {
+            sentenceContainer.appendChild(document.createElement('br'));
+          }
+        });
+
+        // Add the sentence container to the processedText div
+        processedTextDiv.appendChild(sentenceContainer);
+        processedTextDiv.appendChild(document.createElement('br')); // Add line break for readability
       });
     }
 
