@@ -96,6 +96,12 @@
       white-space: pre-wrap;
       margin-top: 20px;
     }
+
+    .line-break {
+      display: block;
+      height: 5px;
+    }
+
   </style>
 </head>
 <body>
@@ -168,62 +174,44 @@
             "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
             "Vietnam", "Yemen", "Zambia", "Zimbabwe", "UK", "USA", "U.S.A.", "U. S. A.", "Korea", "UAE", "Hong Kong", "Ivory Coast", "Cote d'Ivoire", "Macau", "Macao", "Macedonia"];
 
-    // Function to process the text and split it into sentences
+    // Function to process the text and preserve line breaks
     function processText() {
       const inputText = document.getElementById('inputText').value;
-      const sentences = splitIntoSentences(inputText);
+      const lines = inputText.split('\n'); // Split based on line breaks
       const processedTextDiv = document.getElementById('processedText');
       processedTextDiv.innerHTML = '';  // Clear previous sentences
 
-      sentences.forEach(sentence => {
-        const sentenceContainer = document.createElement('span');
-        sentenceContainer.classList.add('sentence-container');
+      lines.forEach(line => {
+        if (line.trim()) {
+          const sentenceContainer = document.createElement('span');
+          sentenceContainer.classList.add('sentence-container');
 
-        const sentenceText = document.createElement('span');
-        sentenceText.textContent = sentence.trim();
+          const sentenceText = document.createElement('span');
+          sentenceText.textContent = line.trim();
 
-        // Add sentence text to the container
-        sentenceContainer.appendChild(sentenceText);
+          // Add sentence text to the container
+          sentenceContainer.appendChild(sentenceText);
 
-        // Create the bubbles for N, D, I, U, O, E
-        const bubbleTypes = ['N', 'D', 'I', 'U', 'O', 'E'];
-        bubbleTypes.forEach(type => {
-          const bubble = document.createElement('span');
-          bubble.classList.add('bubble', type);
-          bubble.textContent = type;
+          // Create the bubbles for N, D, I, U, O, E
+          const bubbleTypes = ['N', 'D', 'I', 'U', 'O', 'E'];
+          bubbleTypes.forEach(type => {
+            const bubble = document.createElement('span');
+            bubble.classList.add('bubble', type);
+            bubble.textContent = type;
 
-          // When a bubble is clicked, move the sentence to the appropriate field
-          bubble.onclick = () => assignTextToField(sentenceText, type);
-          sentenceContainer.appendChild(bubble);
-        });
+            // When a bubble is clicked, move the sentence to the appropriate field
+            bubble.onclick = () => assignTextToField(sentenceText, type);
+            sentenceContainer.appendChild(bubble);
+          });
 
-        // Add the sentence container to the processedText div
-        processedTextDiv.appendChild(sentenceContainer);
-        processedTextDiv.appendChild(document.createElement('br')); // Add line break for readability
-      });
-    }
-
-    // Function to split text into sentences but preserve country names
-    function splitIntoSentences(text) {
-      const words = text.split(/\s+/); // Split by whitespace
-      const sentences = [];
-      let buffer = "";
-
-      words.forEach(word => {
-        const possibleCountry = buffer + (buffer ? " " : "") + word;
-        if (countries.includes(possibleCountry)) {
-          buffer = possibleCountry; // Country match, continue to build buffer
-        } else if (word.match(/[.,\n]$/)) {  // End of a sentence
-          buffer += (buffer ? " " : "") + word;  // Add word to buffer
-          sentences.push(buffer);  // Push the full sentence
-          buffer = "";  // Clear buffer
+          // Add the sentence container to the processedText div
+          processedTextDiv.appendChild(sentenceContainer);
+          processedTextDiv.appendChild(document.createElement('br')); // Add line break for readability
         } else {
-          buffer += (buffer ? " " : "") + word;  // Continue sentence
+          // Add an empty line for double line breaks in the input
+          processedTextDiv.appendChild(document.createElement('br'));
         }
       });
-
-      if (buffer) sentences.push(buffer);  // Add remaining buffer if not empty
-      return sentences;
     }
 
     // Function to assign text to the correct field and remove it from the processed area
