@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -62,6 +61,7 @@
     .bubble.U { background-color: #f39c12; }  /* Orange */
     .bubble.O { background-color: #9b59b6; }  /* Purple */
     .bubble.E { background-color: #1abc9c; }  /* Teal */
+    .bubble.C { background-color: #e67e22; }  /* Dark Orange */
 
     .bubble:hover {
       opacity: 0.8;
@@ -90,6 +90,12 @@
       background-color: #0056b3;
     }
 
+    .settings {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+    }
+
     #savedEntries {
       white-space: pre-wrap;
       margin-top: 20px;
@@ -109,6 +115,15 @@
       <h3>Paste Text</h3>
       <textarea id="inputText" placeholder="Paste text here..."></textarea>
       <button onclick="processText()">Process</button>
+
+      <!-- Text size and Bubble size options -->
+      <div class="settings">
+        <label for="textSize">Text Size: </label>
+        <input type="number" id="textSize" value="16" min="10" max="30" onchange="adjustTextSize()">
+        
+        <label for="bubbleSize">Bubble Size: </label>
+        <input type="number" id="bubbleSize" value="10" min="5" max="20" onchange="adjustBubbleSize()">
+      </div>
 
       <div id="processedText">
         <!-- Sentences with bubbles will appear here -->
@@ -134,6 +149,9 @@
         <label>Others</label>
         <input type="text" id="othersField">
 
+        <label>Country</label> <!-- Added country field -->
+        <input type="text" id="countryField">
+
         <label>Email</label>
         <input type="text" id="emailField">
       </div>
@@ -151,6 +169,13 @@
 
   <script>
     let savedEntries = [];  // Array to store saved entries
+    const forbiddenTexts = [
+      "Corresponding author", 
+      "View the author's ORCID record", 
+      "View in Scopus", 
+      "View the author's ORCID record"
+    ];
+
     const countries = ["Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
             "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
             "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
@@ -172,9 +197,36 @@
             "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
             "Vietnam", "Yemen", "Zambia", "Zimbabwe", "UK", "USA", "U.S.A.", "U. S. A.", "Korea", "UAE", "Hong Kong", "Ivory Coast", "Cote d'Ivoire", "Macau", "Macao", "Macedonia"];
 
-    // Function to process the text and split it into smaller parts
+    // Adjust text size
+    function adjustTextSize() {
+      const textSize = document.getElementById('textSize').value;
+      document.getElementById('processedText').style.fontSize = `${textSize}px`;
+    }
+
+    // Adjust bubble size
+    function adjustBubbleSize() {
+      const bubbleSize = document.getElementById('bubbleSize').value;
+      const bubbles = document.getElementsByClassName('bubble');
+      for (let i = 0; i < bubbles.length; i++) {
+        bubbles[i].style.fontSize = `${bubbleSize}px`;
+      }
+    }
+
+    // Function to process the text, clean it, and split into smaller parts
     function processText() {
-      const inputText = document.getElementById('inputText').value;
+      let inputText = document.getElementById('inputText').value;
+
+      // Remove links (texts with "https")
+      inputText = inputText.replace(/https?:\/\/[^\s]+/g, '');
+
+      // Remove specific phrases and normalize special characters
+      forbiddenTexts.forEach(text => {
+        inputText = inputText.replace(new RegExp(text, 'gi'), '');
+      });
+
+      // Normalize special characters (accents)
+      inputText = inputText.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
       const lines = inputText.split('\n'); // Split based on line breaks
       const processedTextDiv = document.getElementById('processedText');
       processedTextDiv.innerHTML = '';  // Clear previous sentences
@@ -192,8 +244,8 @@
           // Add sentence text to the container
           sentenceContainer.appendChild(sentenceText);
 
-          // Create the bubbles for N, D, I, U, O, E
-          const bubbleTypes = ['N', 'D', 'I', 'U', 'O', 'E'];
+          // Create the bubbles for N, D, I, U, O, C, E
+          const bubbleTypes = ['N', 'D', 'I', 'U', 'O', 'C', 'E'];
           bubbleTypes.forEach(type => {
             const bubble = document.createElement('span');
             bubble.classList.add('bubble', type);
@@ -237,6 +289,9 @@
         case 'O':
           field = document.getElementById('othersField');
           break;
+        case 'C':
+          field = document.getElementById('countryField');
+          break;
         case 'E':
           field = document.getElementById('emailField');
           break;
@@ -259,6 +314,7 @@
       const inst = document.getElementById('instField').value;
       const uni = document.getElementById('uniField').value;
       const others = document.getElementById('othersField').value;
+      const country = document.getElementById('countryField').value;
       const email = document.getElementById('emailField').value;
 
       // Build the saved entry as formatted text
@@ -268,6 +324,7 @@
       if (inst) entry += inst + '\n';
       if (uni) entry += uni + '\n';
       if (others) entry += others + '\n';
+      if (country) entry += country + '\n';
       if (email) entry += email + '\n';
 
       savedEntries.push(entry.trim());  // Save the entry
@@ -279,14 +336,24 @@
       document.getElementById('instField').value = '';
       document.getElementById('uniField').value = '';
       document.getElementById('othersField').value = '';
+      document.getElementById('countryField').value = '';
       document.getElementById('emailField').value = '';
     }
 
-    // Function to extract the saved entries
+    // Function to extract the saved entries and download as a text file
     function extractFile() {
       const savedEntriesDiv = document.getElementById('savedEntries');
       savedEntriesDiv.innerHTML = '';  // Clear previous entries
-      savedEntriesDiv.textContent = savedEntries.join('\n\n');  // Display saved entries with double line break
+
+      const content = savedEntries.join('\n\n');
+      savedEntriesDiv.textContent = content;
+
+      // Create a downloadable text file
+      const blob = new Blob([content], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'saved_entries.txt';
+      link.click();
     }
   </script>
 </body>
