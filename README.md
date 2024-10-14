@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -46,12 +45,22 @@
     }
 
     .highlight-dept {
-      background-color: #2ecc71;  /* Green */
+      background-color: #2ecc71;  /* Green for Department */
+      cursor: pointer;
+    }
+
+    .highlight-inst {
+      background-color: #3498db;  /* Blue for Institute */
+      cursor: pointer;
+    }
+
+    .highlight-uni {
+      background-color: #f39c12;  /* Orange for University */
       cursor: pointer;
     }
 
     .highlight-country {
-      background-color: #f39c12;  /* Orange */
+      background-color: #e67e22;  /* Dark Orange for Country */
       cursor: pointer;
     }
 
@@ -61,9 +70,15 @@
       cursor: pointer;
     }
 
-    .highlight-other {
-      background-color: #9b59b6;  /* Purple */
+    .bubble {
+      display: inline-block;
+      padding: 3px 8px;
+      margin-left: 5px;
+      border-radius: 15px;
+      font-size: 10px;
       cursor: pointer;
+      background-color: #9b59b6;  /* Purple for Other */
+      color: white;
     }
 
     .right-section input {
@@ -175,7 +190,9 @@
       "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
       "Vietnam", "Yemen", "Zambia", "Zimbabwe", "UK", "USA", "U.S.A.", "U. S. A.", "Korea", "UAE", "Hong Kong", "Ivory Coast", "Cote d'Ivoire", "Macau", "Macao", "Macedonia"];
 
-    const departmentKeywords = ['Department', 'Laboratory', 'Institute', 'University', 'Dept', 'Uni'];
+    const departmentKeywords = ['Department', 'Laboratory', 'Dept'];
+    const instituteKeywords = ['Institute', 'Inst'];
+    const universityKeywords = ['University', 'Uni'];
 
     // Function to process the text and split into smaller parts, highlighting them
     function processText() {
@@ -195,19 +212,38 @@
 
           const sentenceText = document.createElement('span');
 
-          // Highlight based on department, country, or email
+          // Highlight based on department, institute, university, country, or email
           if (departmentKeywords.some(keyword => fragmentText.includes(keyword))) {
             sentenceText.classList.add('highlight-dept');
+            sentenceText.onclick = () => assignTextToField(sentenceText, 'D');
+          } else if (instituteKeywords.some(keyword => fragmentText.includes(keyword))) {
+            sentenceText.classList.add('highlight-inst');
+            sentenceText.onclick = () => assignTextToField(sentenceText, 'I');
+          } else if (universityKeywords.some(keyword => fragmentText.includes(keyword))) {
+            sentenceText.classList.add('highlight-uni');
+            sentenceText.onclick = () => assignTextToField(sentenceText, 'U');
           } else if (countries.some(country => fragmentText.includes(country))) {
             sentenceText.classList.add('highlight-country');
+            sentenceText.onclick = () => assignTextToField(sentenceText, 'C');
           } else if (fragmentText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/)) {
             sentenceText.classList.add('highlight-email');
             sentenceText.onclick = () => assignTextToField(sentenceText, 'E');
           } else {
-            sentenceText.classList.add('highlight-other'); // For unrecognized text
-          }
+            // If unrecognized, add a bubble for manual classification
+            sentenceText.textContent = fragmentText;
+            sentenceContainer.appendChild(sentenceText);
 
-          sentenceText.textContent = fragmentText;
+            // Add bubbles for Name (N), Others (O)
+            const bubbleTypes = ['N', 'O'];
+            bubbleTypes.forEach(type => {
+              const bubble = document.createElement('span');
+              bubble.classList.add('bubble');
+              bubble.textContent = type;
+
+              bubble.onclick = () => assignTextToField(sentenceText, type);
+              sentenceContainer.appendChild(bubble);
+            });
+          }
 
           // Add the sentence text to the container
           sentenceContainer.appendChild(sentenceText);
