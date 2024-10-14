@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -44,27 +45,25 @@
       margin-bottom: 10px;
     }
 
-    .bubble {
-      display: inline-block;
-      padding: 3px 8px;
-      margin-left: 5px;
-      border-radius: 15px;
-      font-size: 10px;
+    .highlight-dept {
+      background-color: #2ecc71;  /* Green */
       cursor: pointer;
-      color: white;
     }
 
-    /* Bubbles with different colors */
-    .bubble.N { background-color: #3498db; }  /* Blue */
-    .bubble.D { background-color: #2ecc71; }  /* Green */
-    .bubble.I { background-color: #e74c3c; }  /* Red */
-    .bubble.U { background-color: #f39c12; }  /* Orange */
-    .bubble.O { background-color: #9b59b6; }  /* Purple */
-    .bubble.E { background-color: #1abc9c; }  /* Teal */
-    .bubble.C { background-color: #e67e22; }  /* Dark Orange */
+    .highlight-country {
+      background-color: #f39c12;  /* Orange */
+      cursor: pointer;
+    }
 
-    .bubble:hover {
-      opacity: 0.8;
+    .highlight-email {
+      color: blue;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .highlight-other {
+      background-color: #9b59b6;  /* Purple */
+      cursor: pointer;
     }
 
     .right-section input {
@@ -90,12 +89,6 @@
       background-color: #0056b3;
     }
 
-    .settings {
-      margin-top: 10px;
-      display: flex;
-      justify-content: space-between;
-    }
-
     #savedEntries {
       white-space: pre-wrap;
       margin-top: 20px;
@@ -116,17 +109,8 @@
       <textarea id="inputText" placeholder="Paste text here..."></textarea>
       <button onclick="processText()">Process</button>
 
-      <!-- Text size and Bubble size options -->
-      <div class="settings">
-        <label for="textSize">Text Size: </label>
-        <input type="number" id="textSize" value="16" min="10" max="30" onchange="adjustTextSize()">
-        
-        <label for="bubbleSize">Bubble Size: </label>
-        <input type="number" id="bubbleSize" value="10" min="5" max="20" onchange="adjustBubbleSize()">
-      </div>
-
       <div id="processedText">
-        <!-- Sentences with bubbles will appear here -->
+        <!-- Sentences with highlights will appear here -->
       </div>
     </div>
 
@@ -149,7 +133,7 @@
         <label>Others</label>
         <input type="text" id="othersField">
 
-        <label>Country</label> <!-- Added country field -->
+        <label>Country</label> <!-- Country field -->
         <input type="text" id="countryField">
 
         <label>Email</label>
@@ -169,64 +153,33 @@
 
   <script>
     let savedEntries = [];  // Array to store saved entries
-    const forbiddenTexts = [
-      "Corresponding author", 
-      "View the author's ORCID record", 
-      "View in Scopus", 
-      "View the author's ORCID record"
-    ];
 
     const countries = ["Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
-            "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
-            "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
-            "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica",
-            "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt",
-            "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon",
-            "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
-            "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
-            "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos",
-            "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi",
-            "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova",
-            "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands",
-            "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau",
-            "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania",
-            "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal",
-            "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea",
-            "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan",
-            "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu",
-            "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
-            "Vietnam", "Yemen", "Zambia", "Zimbabwe", "UK", "USA", "U.S.A.", "U. S. A.", "Korea", "UAE", "Hong Kong", "Ivory Coast", "Cote d'Ivoire", "Macau", "Macao", "Macedonia"];
+      "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+      "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
+      "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica",
+      "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt",
+      "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon",
+      "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
+      "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel",
+      "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos",
+      "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi",
+      "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova",
+      "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands",
+      "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau",
+      "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania",
+      "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal",
+      "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea",
+      "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan",
+      "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu",
+      "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
+      "Vietnam", "Yemen", "Zambia", "Zimbabwe", "UK", "USA", "U.S.A.", "U. S. A.", "Korea", "UAE", "Hong Kong", "Ivory Coast", "Cote d'Ivoire", "Macau", "Macao", "Macedonia"];
 
-    // Adjust text size
-    function adjustTextSize() {
-      const textSize = document.getElementById('textSize').value;
-      document.getElementById('processedText').style.fontSize = `${textSize}px`;
-    }
+    const departmentKeywords = ['Department', 'Laboratory', 'Institute', 'University', 'Dept', 'Uni'];
 
-    // Adjust bubble size
-    function adjustBubbleSize() {
-      const bubbleSize = document.getElementById('bubbleSize').value;
-      const bubbles = document.getElementsByClassName('bubble');
-      for (let i = 0; i < bubbles.length; i++) {
-        bubbles[i].style.fontSize = `${bubbleSize}px`;
-      }
-    }
-
-    // Function to process the text, clean it, and split into smaller parts
+    // Function to process the text and split into smaller parts, highlighting them
     function processText() {
-      let inputText = document.getElementById('inputText').value;
-
-      // Remove links (texts with "https")
-      inputText = inputText.replace(/https?:\/\/[^\s]+/g, '');
-
-      // Remove specific phrases and normalize special characters
-      forbiddenTexts.forEach(text => {
-        inputText = inputText.replace(new RegExp(text, 'gi'), '');
-      });
-
-      // Normalize special characters (accents)
-      inputText = inputText.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
+      const inputText = document.getElementById('inputText').value;
       const lines = inputText.split('\n'); // Split based on line breaks
       const processedTextDiv = document.getElementById('processedText');
       processedTextDiv.innerHTML = '';  // Clear previous sentences
@@ -238,23 +191,26 @@
         // Split the line further by commas for better formatting
         const fragments = line.split(',');
         fragments.forEach((fragment, index) => {
+          const fragmentText = fragment.trim();
+
           const sentenceText = document.createElement('span');
-          sentenceText.textContent = fragment.trim();
 
-          // Add sentence text to the container
+          // Highlight based on department, country, or email
+          if (departmentKeywords.some(keyword => fragmentText.includes(keyword))) {
+            sentenceText.classList.add('highlight-dept');
+          } else if (countries.some(country => fragmentText.includes(country))) {
+            sentenceText.classList.add('highlight-country');
+          } else if (fragmentText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/)) {
+            sentenceText.classList.add('highlight-email');
+            sentenceText.onclick = () => assignTextToField(sentenceText, 'E');
+          } else {
+            sentenceText.classList.add('highlight-other'); // For unrecognized text
+          }
+
+          sentenceText.textContent = fragmentText;
+
+          // Add the sentence text to the container
           sentenceContainer.appendChild(sentenceText);
-
-          // Create the bubbles for N, D, I, U, O, C, E
-          const bubbleTypes = ['N', 'D', 'I', 'U', 'O', 'C', 'E'];
-          bubbleTypes.forEach(type => {
-            const bubble = document.createElement('span');
-            bubble.classList.add('bubble', type);
-            bubble.textContent = type;
-
-            // When a bubble is clicked, move the sentence to the appropriate field
-            bubble.onclick = () => assignTextToField(sentenceText, type);
-            sentenceContainer.appendChild(bubble);
-          });
 
           // Add a break if not the last fragment
           if (index < fragments.length - 1) {
@@ -272,7 +228,7 @@
     function assignTextToField(textElement, fieldType) {
       const text = textElement.textContent.trim();
       let field;
-      
+
       switch (fieldType) {
         case 'N':
           field = document.getElementById('nameField');
