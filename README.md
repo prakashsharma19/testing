@@ -44,24 +44,9 @@
       margin-bottom: 10px;
     }
 
-    /* Highlight styles for different categories */
-    .highlight-dept {
-      background-color: #2ecc71;  /* Green for Department */
-      cursor: pointer;
-    }
-
-    .highlight-inst {
-      background-color: #3498db;  /* Blue for Institute */
-      cursor: pointer;
-    }
-
-    .highlight-uni {
-      background-color: #f39c12;  /* Orange for University */
-      cursor: pointer;
-    }
-
-    .highlight-country {
-      background-color: #e67e22;  /* Dark Orange for Country */
+    /* Highlight only specific keywords */
+    .highlight-keyword {
+      background-color: #2ecc71;  /* Green for Keywords */
       cursor: pointer;
     }
 
@@ -69,17 +54,6 @@
       color: blue;
       text-decoration: underline;
       cursor: pointer;
-    }
-
-    .bubble {
-      display: inline-block;
-      padding: 3px 8px;
-      margin-left: 5px;
-      border-radius: 15px;
-      font-size: 10px;
-      cursor: pointer;
-      background-color: #9b59b6;  /* Purple for Other */
-      color: white;
     }
 
     .right-section input {
@@ -110,9 +84,23 @@
       margin-top: 20px;
     }
 
-    .line-break {
-      display: block;
-      height: 5px;
+    /* Context menu for right-click options */
+    .context-menu {
+      position: absolute;
+      background-color: white;
+      border: 1px solid #ccc;
+      display: none;
+      z-index: 1000;
+      box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .context-menu-item {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .context-menu-item:hover {
+      background-color: #f0f0f0;
     }
 
   </style>
@@ -140,12 +128,6 @@
         <label>Department</label>
         <input type="text" id="deptField">
 
-        <label>Institute</label>
-        <input type="text" id="instField">
-
-        <label>University</label>
-        <input type="text" id="uniField">
-
         <label>Others</label>
         <input type="text" id="othersField">
 
@@ -164,11 +146,18 @@
     </div>
   </div>
 
+  <!-- Context Menu for Right Click -->
+  <div id="contextMenu" class="context-menu">
+    <div class="context-menu-item" onclick="assignTextToFieldFromContext('Address')">Address</div>
+    <div class="context-menu-item" onclick="assignTextToFieldFromContext('Department')">Department</div>
+  </div>
+
   <!-- Section for displaying saved entries -->
   <div id="savedEntries"></div>
 
   <script>
     let savedEntries = [];  // Array to store saved entries
+    let contextTarget = null;  // Keep track of the element for right-click context menu
 
     const countries = ["Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
       "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
@@ -191,13 +180,16 @@
       "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
       "Vietnam", "Yemen", "Zambia", "Zimbabwe", "UK", "USA", "U.S.A.", "U. S. A.", "Korea", "UAE", "Hong Kong", "Ivory Coast", "Cote d'Ivoire", "Macau", "Macao", "Macedonia"];
 
-    const departmentKeywords = ['Department', 'Laboratory', 'Dept'];
-    const instituteKeywords = ['Institute', 'Inst'];
-    const universityKeywords = ['University', 'Uni'];
+    const departmentKeywords = ['Department', 'Institute', 'Laboratory', 'School'];
 
     // Function to process the text and split into smaller parts, highlighting them
     function processText() {
-      const inputText = document.getElementById('inputText').value;
+      let inputText = document.getElementById('inputText').value;
+
+      // Remove unnecessary texts like "View the author's ORCID record" and "Corresponding author."
+      inputText = inputText.replace(/View the author's ORCID record/gi, '');
+      inputText = inputText.replace(/Corresponding author\./gi, '');
+
       const lines = inputText.split('\n'); // Split based on line breaks
       const processedTextDiv = document.getElementById('processedText');
       processedTextDiv.innerHTML = '';  // Clear previous sentences
@@ -210,48 +202,39 @@
         const fragments = line.split(',');
         fragments.forEach((fragment, index) => {
           const fragmentText = fragment.trim();
-
           const sentenceText = document.createElement('span');
 
-          // Highlight based on department, institute, university, country, or email
-          if (departmentKeywords.some(keyword => fragmentText.includes(keyword))) {
-            sentenceText.classList.add('highlight-dept');
-            sentenceText.textContent = fragmentText;
-            sentenceText.onclick = () => assignTextToField(sentenceText, 'D');
-          } else if (instituteKeywords.some(keyword => fragmentText.includes(keyword))) {
-            sentenceText.classList.add('highlight-inst');
-            sentenceText.textContent = fragmentText;
-            sentenceText.onclick = () => assignTextToField(sentenceText, 'I');
-          } else if (universityKeywords.some(keyword => fragmentText.includes(keyword))) {
-            sentenceText.classList.add('highlight-uni');
-            sentenceText.textContent = fragmentText;
-            sentenceText.onclick = () => assignTextToField(sentenceText, 'U');
-          } else if (countries.some(country => fragmentText.includes(country))) {
-            sentenceText.classList.add('highlight-country');
-            sentenceText.textContent = fragmentText;
-            sentenceText.onclick = () => assignTextToField(sentenceText, 'C');
-          } else if (fragmentText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/)) {
-            sentenceText.classList.add('highlight-email');
-            sentenceText.textContent = fragmentText;
-            sentenceText.onclick = () => assignTextToField(sentenceText, 'E');
-          } else {
-            // If unrecognized, add a bubble for manual classification
-            sentenceText.textContent = fragmentText;
-            sentenceContainer.appendChild(sentenceText);
+          // Highlight based on department keywords
+          let highlighted = false;
+          departmentKeywords.forEach(keyword => {
+            if (fragmentText.includes(keyword)) {
+              const keywordIndex = fragmentText.indexOf(keyword);
+              const beforeKeyword = fragmentText.substring(0, keywordIndex);
+              const afterKeyword = fragmentText.substring(keywordIndex + keyword.length);
 
-            // Add bubbles for Name (N), Others (O)
-            const bubbleTypes = ['N', 'O'];
-            bubbleTypes.forEach(type => {
-              const bubble = document.createElement('span');
-              bubble.classList.add('bubble');
-              bubble.textContent = type;
+              sentenceText.innerHTML = `${beforeKeyword}<span class="highlight-keyword" onclick="assignTextToField(this, 'D')">${keyword}</span>${afterKeyword}`;
+              highlighted = true;
+            }
+          });
 
-              bubble.onclick = () => assignTextToField(sentenceText, type);
-              sentenceContainer.appendChild(bubble);
-            });
+          if (!highlighted) {
+            sentenceText.textContent = fragmentText;
           }
 
-          // Add the sentence text to the container
+          // Check if it's an email
+          if (fragmentText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/)) {
+            sentenceText.classList.add('highlight-email');
+            sentenceText.onclick = () => assignTextToField(sentenceText, 'E');
+          } else {
+            sentenceContainer.appendChild(sentenceText);
+
+            // Add context menu trigger for unrecognized text
+            sentenceText.oncontextmenu = (event) => {
+              event.preventDefault();
+              showContextMenu(event, sentenceText);
+            };
+          }
+
           sentenceContainer.appendChild(sentenceText);
 
           // Add a break if not the last fragment
@@ -272,26 +255,20 @@
       let field;
 
       switch (fieldType) {
-        case 'N':
-          field = document.getElementById('nameField');
-          break;
         case 'D':
           field = document.getElementById('deptField');
-          break;
-        case 'I':
-          field = document.getElementById('instField');
-          break;
-        case 'U':
-          field = document.getElementById('uniField');
-          break;
-        case 'O':
-          field = document.getElementById('othersField');
           break;
         case 'C':
           field = document.getElementById('countryField');
           break;
         case 'E':
           field = document.getElementById('emailField');
+          break;
+        case 'Address':
+          field = document.getElementById('othersField');
+          break;
+        case 'Department':
+          field = document.getElementById('deptField');
           break;
       }
 
@@ -303,14 +280,41 @@
 
       // Remove the text from the sentence container
       textElement.remove();
+      hideContextMenu();
     }
+
+    // Function to show context menu on right-click
+    function showContextMenu(event, targetElement) {
+      const contextMenu = document.getElementById('contextMenu');
+      contextMenu.style.display = 'block';
+      contextMenu.style.top = `${event.clientY}px`;
+      contextMenu.style.left = `${event.clientX}px`;
+      contextTarget = targetElement;
+    }
+
+    // Function to hide context menu
+    function hideContextMenu() {
+      const contextMenu = document.getElementById('contextMenu');
+      contextMenu.style.display = 'none';
+    }
+
+    // Function to assign text from context menu selection
+    function assignTextToFieldFromContext(choice) {
+      if (contextTarget) {
+        assignTextToField(contextTarget, choice);
+        contextTarget = null;  // Reset the target
+      }
+    }
+
+    // Close context menu on click elsewhere
+    document.addEventListener('click', function (event) {
+      hideContextMenu();
+    });
 
     // Function to save the current entry
     function saveEntry() {
       const name = document.getElementById('nameField').value;
       const dept = document.getElementById('deptField').value;
-      const inst = document.getElementById('instField').value;
-      const uni = document.getElementById('uniField').value;
       const others = document.getElementById('othersField').value;
       const country = document.getElementById('countryField').value;
       const email = document.getElementById('emailField').value;
@@ -319,8 +323,6 @@
       let entry = '';
       if (name) entry += name + '\n';
       if (dept) entry += dept + '\n';
-      if (inst) entry += inst + '\n';
-      if (uni) entry += uni + '\n';
       if (others) entry += others + '\n';
       if (country) entry += country + '\n';
       if (email) entry += email + '\n';
@@ -331,8 +333,6 @@
       // Clear the fields after saving
       document.getElementById('nameField').value = '';
       document.getElementById('deptField').value = '';
-      document.getElementById('instField').value = '';
-      document.getElementById('uniField').value = '';
       document.getElementById('othersField').value = '';
       document.getElementById('countryField').value = '';
       document.getElementById('emailField').value = '';
