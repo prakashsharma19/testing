@@ -44,6 +44,7 @@
       margin-bottom: 10px;
     }
 
+    /* Highlight styles for different categories */
     .highlight-dept {
       background-color: #2ecc71;  /* Green for Department */
       cursor: pointer;
@@ -148,7 +149,7 @@
         <label>Others</label>
         <input type="text" id="othersField">
 
-        <label>Country</label> <!-- Country field -->
+        <label>Country</label>
         <input type="text" id="countryField">
 
         <label>Email</label>
@@ -215,18 +216,23 @@
           // Highlight based on department, institute, university, country, or email
           if (departmentKeywords.some(keyword => fragmentText.includes(keyword))) {
             sentenceText.classList.add('highlight-dept');
+            sentenceText.textContent = fragmentText;
             sentenceText.onclick = () => assignTextToField(sentenceText, 'D');
           } else if (instituteKeywords.some(keyword => fragmentText.includes(keyword))) {
             sentenceText.classList.add('highlight-inst');
+            sentenceText.textContent = fragmentText;
             sentenceText.onclick = () => assignTextToField(sentenceText, 'I');
           } else if (universityKeywords.some(keyword => fragmentText.includes(keyword))) {
             sentenceText.classList.add('highlight-uni');
+            sentenceText.textContent = fragmentText;
             sentenceText.onclick = () => assignTextToField(sentenceText, 'U');
           } else if (countries.some(country => fragmentText.includes(country))) {
             sentenceText.classList.add('highlight-country');
+            sentenceText.textContent = fragmentText;
             sentenceText.onclick = () => assignTextToField(sentenceText, 'C');
           } else if (fragmentText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/)) {
             sentenceText.classList.add('highlight-email');
+            sentenceText.textContent = fragmentText;
             sentenceText.onclick = () => assignTextToField(sentenceText, 'E');
           } else {
             // If unrecognized, add a bubble for manual classification
