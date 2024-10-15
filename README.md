@@ -103,6 +103,26 @@
       background-color: #f0f0f0;
     }
 
+    /* Hover suggestion for unrecognized text */
+    .suggestion {
+      background-color: #f39c12;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .suggestion:hover::after {
+      content: attr(data-suggestion);
+      position: absolute;
+      background-color: #333;
+      color: #fff;
+      padding: 5px;
+      border-radius: 3px;
+      top: 100%;
+      left: 0;
+      z-index: 1000;
+      white-space: nowrap;
+    }
+
   </style>
 </head>
 <body>
@@ -198,60 +218,45 @@
         const sentenceContainer = document.createElement('span');
         sentenceContainer.classList.add('sentence-container');
 
-        // Split the line further by commas for better formatting
-        const fragments = line.split(',');
-        fragments.forEach((fragment, index) => {
-          const fragmentText = fragment.trim();
-          const sentenceText = document.createElement('span');
+        // Highlight based on department keywords and prepare full line for Department field
+        let highlighted = false;
+        departmentKeywords.forEach(keyword => {
+          if (line.includes(keyword)) {
+            const keywordIndex = line.indexOf(keyword);
+            const beforeKeyword = line.substring(0, keywordIndex);
+            const afterKeyword = line.substring(keywordIndex + keyword.length);
 
-          // Highlight based on department keywords
-          let highlighted = false;
-          departmentKeywords.forEach(keyword => {
-            if (fragmentText.includes(keyword)) {
-              const keywordIndex = fragmentText.indexOf(keyword);
-              const beforeKeyword = fragmentText.substring(0, keywordIndex);
-              const afterKeyword = fragmentText.substring(keywordIndex + keyword.length);
-
-              sentenceText.innerHTML = `${beforeKeyword}<span class="highlight-keyword" onclick="assignTextToField(this, 'D')">${keyword}</span>${afterKeyword}`;
-              highlighted = true;
-            }
-          });
-
-          if (!highlighted) {
-            sentenceText.textContent = fragmentText;
-          }
-
-          // Check if it's an email
-          if (fragmentText.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/)) {
-            sentenceText.classList.add('highlight-email');
-            sentenceText.onclick = () => assignTextToField(sentenceText, 'E');
-          } else {
-            sentenceContainer.appendChild(sentenceText);
-
-            // Add context menu trigger for unrecognized text
-            sentenceText.oncontextmenu = (event) => {
-              event.preventDefault();
-              showContextMenu(event, sentenceText);
-            };
-          }
-
-          sentenceContainer.appendChild(sentenceText);
-
-          // Add a break if not the last fragment
-          if (index < fragments.length - 1) {
-            sentenceContainer.appendChild(document.createElement('br'));
+            sentenceContainer.innerHTML = `${beforeKeyword}<span class="highlight-keyword" onclick="assignFullLineToField(this, 'D')">${keyword}</span>${afterKeyword}`;
+            highlighted = true;
           }
         });
 
-        // Add the sentence container to the processedText div
+        if (!highlighted) {
+          const sentenceText = document.createElement('span');
+          sentenceText.textContent = line;
+          sentenceText.classList.add('suggestion');
+          sentenceText.setAttribute('data-suggestion', 'Right-click to assign as Address or Department');
+          sentenceText.oncontextmenu = (event) => {
+            event.preventDefault();
+            showContextMenu(event, sentenceText);
+          };
+          sentenceContainer.appendChild(sentenceText);
+        }
+
+        // Check if the line contains an email
+        if (line.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/)) {
+          sentenceContainer.classList.add('highlight-email');
+          sentenceContainer.onclick = () => assignFullLineToField(sentenceContainer, 'E');
+        }
+
         processedTextDiv.appendChild(sentenceContainer);
         processedTextDiv.appendChild(document.createElement('br')); // Add line break for readability
       });
     }
 
-    // Function to assign text to the correct field and remove it from the processed area
-    function assignTextToField(textElement, fieldType) {
-      const text = textElement.textContent.trim();
+    // Function to assign the entire line to the correct field
+    function assignFullLineToField(textElement, fieldType) {
+      const text = textElement.parentElement.textContent.trim();  // Get the entire line
       let field;
 
       switch (fieldType) {
@@ -278,8 +283,8 @@
         field.value = text;
       }
 
-      // Remove the text from the sentence container
-      textElement.remove();
+      // Remove the entire line from the processed area
+      textElement.parentElement.remove();
       hideContextMenu();
     }
 
@@ -301,7 +306,7 @@
     // Function to assign text from context menu selection
     function assignTextToFieldFromContext(choice) {
       if (contextTarget) {
-        assignTextToField(contextTarget, choice);
+        assignFullLineToField(contextTarget, choice);
         contextTarget = null;  // Reset the target
       }
     }
