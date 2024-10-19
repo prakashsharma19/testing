@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -202,69 +203,48 @@
       "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela",
       "Vietnam", "Yemen", "Zambia", "Zimbabwe", "UK", "USA", "U.S.A.", "U. S. A.", "Korea", "UAE", "Hong Kong", "Ivory Coast", "Cote d'Ivoire", "Macau", "Macao", "Macedonia"];
 
-    const departmentKeywords = ['Department', 'Institute', 'Laboratory', 'School'];
-
-    // Function to process the text and split into smaller parts, highlighting them
+    // Function to process the text, split by commas and create selectable parts
     function processText() {
       let inputText = document.getElementById('inputText').value;
 
       // Remove unnecessary texts like "View the author's ORCID record" and "Corresponding author."
-      inputText = inputText.replace(/View the author's ORCID record/gi, '');
-      inputText = inputText.replace(/Corresponding author\./gi, '');
+      inputText = inputText.replace(/View in Scopus/gi, '').replace(/Corresponding author\./gi, '');
 
-      const lines = inputText.split('\n'); // Split based on line breaks
+      const parts = inputText.split(','); // Split by commas
       const processedTextDiv = document.getElementById('processedText');
       processedTextDiv.innerHTML = '';  // Clear previous sentences
 
-      lines.forEach(line => {
+      parts.forEach(part => {
+        const trimmedPart = part.trim();
         const sentenceContainer = document.createElement('span');
         sentenceContainer.classList.add('sentence-container');
-
-        // Highlight based on department keywords and prepare full line for Department field
-        let highlighted = false;
-        departmentKeywords.forEach(keyword => {
-          if (line.includes(keyword)) {
-            const keywordIndex = line.indexOf(keyword);
-            const beforeKeyword = line.substring(0, keywordIndex);
-            const afterKeyword = line.substring(keywordIndex + keyword.length);
-
-            sentenceContainer.innerHTML = `${beforeKeyword}<span class="highlight-keyword" onclick="assignFullLineToField(this, 'D')">${keyword}</span>${afterKeyword}`;
-            highlighted = true;
-          }
-        });
-
-        if (!highlighted) {
-          const sentenceText = document.createElement('span');
-          sentenceText.textContent = line;
-          sentenceText.classList.add('suggestion');
-          sentenceText.setAttribute('data-suggestion', 'Right-click to assign as Name, Department, University, or Others');
-          sentenceText.oncontextmenu = (event) => {
-            event.preventDefault();
-            showContextMenu(event, sentenceText);
-          };
-          sentenceContainer.appendChild(sentenceText);
-        }
-
-        // Check if the line contains an email
-        if (line.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/)) {
+        
+        // Highlight email or country-specific parts
+        if (trimmedPart.match(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/)) {
           sentenceContainer.classList.add('highlight-email');
+          sentenceContainer.textContent = trimmedPart;
           sentenceContainer.onclick = () => assignFullLineToField(sentenceContainer, 'E');
+        } else if (countries.some(country => trimmedPart.includes(country))) {
+          sentenceContainer.classList.add('highlight-keyword');
+          sentenceContainer.textContent = trimmedPart;
+          sentenceContainer.onclick = () => assignFullLineToField(sentenceContainer, 'C');
+        } else {
+          // Handle non-email and non-country parts with right-click options
+          sentenceContainer.textContent = trimmedPart;
+          sentenceContainer.classList.add('suggestion');
+          sentenceContainer.setAttribute('data-suggestion', 'Right-click to assign as Name, Department, University, or Others');
+          sentenceContainer.oncontextmenu = (event) => {
+            event.preventDefault();
+            showContextMenu(event, sentenceContainer);
+          };
         }
-
-        // Check if the line contains a country
-        countries.forEach(country => {
-          if (line.includes(country)) {
-            sentenceContainer.classList.add('highlight-keyword');
-            sentenceContainer.onclick = () => assignFullLineToField(sentenceContainer, 'C');
-          }
-        });
 
         processedTextDiv.appendChild(sentenceContainer);
         processedTextDiv.appendChild(document.createElement('br')); // Add line break for readability
       });
     }
 
-    // Function to assign the entire line to the correct field or append if already filled
+    // Function to assign the entire line to the correct field
     function assignFullLineToField(textElement, fieldType) {
       const text = textElement.textContent.trim();  // Get the entire line
       let field;
