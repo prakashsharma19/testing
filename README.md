@@ -148,7 +148,7 @@
         <label>Department</label>
         <input type="text" id="deptField">
 
-        <label>Others</label>
+        <label>Others (Address)</label>
         <input type="text" id="othersField">
 
         <label>Country</label>
@@ -168,8 +168,10 @@
 
   <!-- Context Menu for Right Click -->
   <div id="contextMenu" class="context-menu">
-    <div class="context-menu-item" onclick="assignTextToFieldFromContext('Address')">Address</div>
+    <div class="context-menu-item" onclick="assignTextToFieldFromContext('Name')">Name</div>
     <div class="context-menu-item" onclick="assignTextToFieldFromContext('Department')">Department</div>
+    <div class="context-menu-item" onclick="assignTextToFieldFromContext('University')">University</div>
+    <div class="context-menu-item" onclick="assignTextToFieldFromContext('Others')">Others (Address)</div>
   </div>
 
   <!-- Section for displaying saved entries -->
@@ -178,7 +180,6 @@
   <script>
     let savedEntries = [];  // Array to store saved entries
     let contextTarget = null;  // Keep track of the element for right-click context menu
-    let clickCounter = 0;  // Counter to track click events for fields
 
     const countries = ["Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
       "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
@@ -236,7 +237,7 @@
           const sentenceText = document.createElement('span');
           sentenceText.textContent = line;
           sentenceText.classList.add('suggestion');
-          sentenceText.setAttribute('data-suggestion', 'Right-click to assign as Address or Department');
+          sentenceText.setAttribute('data-suggestion', 'Right-click to assign as Name, Department, University, or Others');
           sentenceText.oncontextmenu = (event) => {
             event.preventDefault();
             showContextMenu(event, sentenceText);
@@ -250,40 +251,90 @@
           sentenceContainer.onclick = () => assignFullLineToField(sentenceContainer, 'E');
         }
 
+        // Check if the line contains a country
+        countries.forEach(country => {
+          if (line.includes(country)) {
+            sentenceContainer.classList.add('highlight-keyword');
+            sentenceContainer.onclick = () => assignFullLineToField(sentenceContainer, 'C');
+          }
+        });
+
         processedTextDiv.appendChild(sentenceContainer);
         processedTextDiv.appendChild(document.createElement('br')); // Add line break for readability
       });
     }
 
-    // Function to handle text assignment on click, based on clickCounter
-    function handleTextClick(textElement) {
-      const text = textElement.textContent.trim();
+    // Function to assign the entire line to the correct field or append if already filled
+    function assignFullLineToField(textElement, fieldType) {
+      const text = textElement.textContent.trim();  // Get the entire line
+      let field;
 
-      switch (clickCounter) {
-        case 0:
-          document.getElementById('nameField').value = text;  // Assign to Name field
+      switch (fieldType) {
+        case 'C':
+          field = document.getElementById('countryField');
+          field.value = text;  // Directly assign the country
           break;
-        case 1:
-          document.getElementById('deptField').value = text;  // Assign to Department field
+        case 'E':
+          field = document.getElementById('emailField');
+          field.value = text;  // Directly assign the email
           break;
-        case 2:
-          document.getElementById('othersField').value = text;  // Assign to Others field
-          break;
-        case 3:
-          document.getElementById('countryField').value = text;  // Assign to Country field
-          break;
-        case 4:
-          document.getElementById('emailField').value = text;  // Assign to Email field
-          break;
+        default:
+          return; // No need for further action on 'C' and 'E'
+      }
+    }
+
+    // Function to show context menu on right-click
+    function showContextMenu(event, targetElement) {
+      const contextMenu = document.getElementById('contextMenu');
+      contextMenu.style.display = 'block';
+      contextMenu.style.top = `${event.clientY}px`;
+      contextMenu.style.left = `${event.clientX}px`;
+      contextTarget = targetElement;
+    }
+
+    // Function to hide context menu
+    function hideContextMenu() {
+      const contextMenu = document.getElementById('contextMenu');
+      contextMenu.style.display = 'none';
+    }
+
+    // Function to append or assign text from context menu selection
+    function assignTextToFieldFromContext(choice) {
+      if (contextTarget) {
+        const text = contextTarget.textContent.trim();
+        let field;
+
+        switch (choice) {
+          case 'Name':
+            field = document.getElementById('nameField');
+            break;
+          case 'Department':
+            field = document.getElementById('deptField');
+            break;
+          case 'University':
+            field = document.getElementById('deptField');
+            break;
+          case 'Others':
+            field = document.getElementById('othersField');
+            break;
+        }
+
+        if (field.value) {
+          field.value += ', ' + text;  // Append the text with a comma
+        } else {
+          field.value = text;  // Assign the text
+        }
+
+        contextTarget = null;  // Reset the target
       }
 
-      clickCounter = (clickCounter + 1) % 5;  // Increment and reset after 5 clicks
+      hideContextMenu();  // Hide the context menu after assigning
     }
 
-    // Function to assign the entire line to the correct field
-    function assignFullLineToField(textElement, fieldType) {
-      handleTextClick(textElement);  // Handle text click based on clickCounter
-    }
+    // Close context menu on click elsewhere
+    document.addEventListener('click', function () {
+      hideContextMenu();
+    });
 
     // Function to save the current entry
     function saveEntry() {
@@ -310,37 +361,7 @@
       document.getElementById('othersField').value = '';
       document.getElementById('countryField').value = '';
       document.getElementById('emailField').value = '';
-
-      clickCounter = 0;  // Reset the click counter after saving
     }
-
-    // Function to show context menu on right-click
-    function showContextMenu(event, targetElement) {
-      const contextMenu = document.getElementById('contextMenu');
-      contextMenu.style.display = 'block';
-      contextMenu.style.top = `${event.clientY}px`;
-      contextMenu.style.left = `${event.clientX}px`;
-      contextTarget = targetElement;
-    }
-
-    // Function to hide context menu
-    function hideContextMenu() {
-      const contextMenu = document.getElementById('contextMenu');
-      contextMenu.style.display = 'none';
-    }
-
-    // Function to assign text from context menu selection
-    function assignTextToFieldFromContext(choice) {
-      if (contextTarget) {
-        assignFullLineToField(contextTarget, choice);
-        contextTarget = null;  // Reset the target
-      }
-    }
-
-    // Close context menu on click elsewhere
-    document.addEventListener('click', function (event) {
-      hideContextMenu();
-    });
 
     // Function to extract the saved entries and download as a text file
     function extractFile() {
