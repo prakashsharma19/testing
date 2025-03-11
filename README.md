@@ -98,7 +98,7 @@
         }
 
         async function checkGrammar(text) {
-            const apiKey = "your-api-key"; // Replace with your actual key
+            const apiKey = "AIzaSyBIXgqTphaQq8u3W5A4HRHVhwBp_fbnfsg"; // Replace with your actual key
             try {
                 const response = await fetch("https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateText?key=" + apiKey, {
                     method: "POST",
