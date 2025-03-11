@@ -8,6 +8,7 @@
     <style>
         body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
         textarea { width: 100%; height: 200px; }
+        #status { font-weight: bold; color: blue; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -15,30 +16,46 @@
     <input type="file" id="fileInput" accept=".pdf,.docx">
     <button onclick="processFile()">Check</button>
     <h3>Corrected Text:</h3>
+    <p id="status"></p> <!-- Status message -->
     <textarea id="output" readonly></textarea>
 
     <script>
         async function processFile() {
             const fileInput = document.getElementById('fileInput');
+            const status = document.getElementById('status');
+            status.textContent = "Processing file..."; // Show processing message
+
             if (!fileInput.files.length) {
                 alert("Please select a file.");
+                status.textContent = "";
                 return;
             }
-            
+
             const file = fileInput.files[0];
             let text = '';
 
-            if (file.name.endsWith('.pdf')) {
-                text = await extractTextFromPDF(file);
-            } else if (file.name.endsWith('.docx')) {
-                text = await extractTextFromDocx(file);
-            } else {
-                alert("Unsupported file type. Please upload a PDF or DOCX.");
-                return;
-            }
+            try {
+                if (file.name.endsWith('.pdf')) {
+                    text = await extractTextFromPDF(file);
+                } else if (file.name.endsWith('.docx')) {
+                    text = await extractTextFromDocx(file);
+                } else {
+                    alert("Unsupported file type. Please upload a PDF or DOCX.");
+                    status.textContent = "";
+                    return;
+                }
 
-            if (text) {
-                checkGrammar(text);
+                if (text.trim()) {
+                    status.textContent = "Checking grammar...";
+                    checkGrammar(text);
+                } else {
+                    alert("No text extracted. The file may be empty or unsupported.");
+                    status.textContent = "";
+                }
+            } catch (error) {
+                console.error("Error processing file:", error);
+                alert("Error processing the file. Please try again.");
+                status.textContent = "";
             }
         }
 
@@ -46,17 +63,21 @@
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = async function(event) {
-                    const typedArray = new Uint8Array(event.target.result);
-                    const pdf = await pdfjsLib.getDocument(typedArray).promise;
-                    let text = '';
-                    
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const content = await page.getTextContent();
-                        text += content.items.map(item => item.str).join(' ') + '\n';
+                    try {
+                        const typedArray = new Uint8Array(event.target.result);
+                        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+                        let text = '';
+                        
+                        for (let i = 1; i <= pdf.numPages; i++) {
+                            const page = await pdf.getPage(i);
+                            const content = await page.getTextContent();
+                            text += content.items.map(item => item.str).join(' ') + '\n';
+                        }
+
+                        resolve(text);
+                    } catch (error) {
+                        reject(error);
                     }
-                    
-                    resolve(text);
                 };
                 reader.onerror = reject;
                 reader.readAsArrayBuffer(file);
@@ -77,19 +98,29 @@
         }
 
         async function checkGrammar(text) {
-            const apiKey = "AIzaSyBIXgqTphaQq8u3W5A4HRHVhwBp_fbnfsg"; // Replace with your actual key
-            const response = await fetch("https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateText?key=" + apiKey, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    prompt: "Proofread this text: " + text,
-                    temperature: 0.7,
-                    max_tokens: 300
-                })
-            });
+            const apiKey = "your-api-key"; // Replace with your actual key
+            try {
+                const response = await fetch("https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateText?key=" + apiKey, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        prompt: "Proofread this text: " + text,
+                        temperature: 0.7,
+                        max_tokens: 300
+                    })
+                });
 
-            const data = await response.json();
-            document.getElementById("output").value = data?.candidates?.[0]?.output || "Error: No response received";
+                const data = await response.json();
+                console.log("API Response:", data);
+
+                const correctedText = data?.candidates?.[0]?.output || "Error: No response received";
+                document.getElementById("output").value = correctedText;
+                document.getElementById("status").textContent = "Grammar check completed!";
+            } catch (error) {
+                console.error("Error checking grammar:", error);
+                alert("Error checking grammar. Please try again.");
+                document.getElementById("status").textContent = "";
+            }
         }
     </script>
 </body>
