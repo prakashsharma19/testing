@@ -715,7 +715,7 @@
       reader.readAsText(file);
     });
 
-    document.getElementById('groupSelect').addEventListener('change', function() {
+    document.getElementById('groupSelect').addEventListener('change', async function() {
       const selectedOptions = Array.from(this.selectedOptions).map(opt => opt.value);
       
       if (selectedOptions.includes('__create__')) {
@@ -731,14 +731,25 @@
       updateGroupCountriesDisplay(filteredOptions);
       
       if (filteredOptions.length > 0 && !(filteredOptions.length === 1 && filteredOptions[0] === '')) {
-        renderEntries(entry => 
-          filteredOptions.some(groupName => 
-            countryGroups[groupName]?.some(country => entryContainsCountry(entry, country))
-          ),
-          filteredOptions
-        );
+        // Create a set of all countries in the selected groups for faster lookup
+        const selectedCountries = new Set();
+        for (const groupName of filteredOptions) {
+          if (countryGroups[groupName]) {
+            for (const country of countryGroups[groupName]) {
+              selectedCountries.add(country.toLowerCase());
+            }
+          }
+        }
+        
+        await renderEntries(async (entry) => {
+          const entryCountry = await getCountryFromEntry(entry);
+          if (!entryCountry) return false;
+          
+          const standardizedCountry = countryMap[entryCountry] || entryCountry;
+          return selectedCountries.has(standardizedCountry.toLowerCase());
+        }, filteredOptions);
       } else {
-        renderEntries(() => true);
+        await renderEntries(() => true);
       }
     });
 
