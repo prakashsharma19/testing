@@ -244,6 +244,58 @@
       border-radius: 4px;
       font-size: 14px;
     }
+    
+    /* Loading indicator styles */
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 15px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+    
+    .progress-bar {
+      width: 300px;
+      height: 20px;
+      background-color: #f3f3f3;
+      border-radius: 10px;
+      margin-top: 15px;
+      overflow: hidden;
+    }
+    
+    .progress {
+      height: 100%;
+      background-color: var(--primary-color);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
   </style>
 </head>
 <body>
@@ -319,6 +371,15 @@
     <div id="entriesContainer"></div>
   </div>
 
+  <!-- Loading overlay -->
+  <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loadingText">Processing entries...</div>
+    <div class="progress-bar">
+      <div class="progress" id="progressBar"></div>
+    </div>
+  </div>
+
   <script>
     const countryList = [
       "Afghanistan", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia",
@@ -387,8 +448,24 @@
     let currentGroupNames = [];
     let groupCounts = {};
 
+    // Show loading overlay
+    function showLoading(text = "Processing entries...") {
+      document.getElementById('loadingText').textContent = text;
+      document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+    
+    // Hide loading overlay
+    function hideLoading() {
+      document.getElementById('loadingOverlay').style.display = 'none';
+    }
+    
+    // Update progress bar
+    function updateProgress(percent) {
+      document.getElementById('progressBar').style.width = `${percent}%`;
+    }
+
     // Improved country detection - looks for country on the line before email
-    function getCountryFromEntry(entry) {
+    async function getCountryFromEntry(entry) {
       const lines = entry.split('\n').map(line => line.trim()).filter(line => line.length > 0);
       
       // Find the email line (contains @)
@@ -414,32 +491,78 @@
       return null;
     }
 
-    function entryContainsCountry(entry, country) {
-      const entryCountry = getCountryFromEntry(entry);
+    async function entryContainsCountry(entry, country) {
+      const entryCountry = await getCountryFromEntry(entry);
       if (!entryCountry) return false;
       
       const standardizedCountry = countryMap[country] || country;
       return entryCountry.toLowerCase() === standardizedCountry.toLowerCase();
     }
 
-    function countEntriesForCountry(country) {
+    async function countEntriesForCountry(country) {
       if (!allParts.length) return 0;
-      return allParts.filter(entry => entryContainsCountry(entry, country)).length;
-    }
-
-    function countEntriesForGroup(groupName) {
-      if (!allParts.length || !countryGroups[groupName]) return 0;
-      return allParts.filter(entry => 
-        countryGroups[groupName].some(country => entryContainsCountry(entry, country))
-        ).length;
-    }
-
-    function updateGroupCounts() {
-      groupCounts = {};
-      for (const groupName in countryGroups) {
-        groupCounts[groupName] = countEntriesForGroup(groupName);
+      let count = 0;
+      
+      // Process in chunks to avoid freezing
+      const chunkSize = 100;
+      for (let i = 0; i < allParts.length; i += chunkSize) {
+        const chunk = allParts.slice(i, i + chunkSize);
+        const results = await Promise.all(chunk.map(entry => entryContainsCountry(entry, country)));
+        count += results.filter(Boolean).length;
+        
+        // Update progress
+        updateProgress(Math.min(100, (i / allParts.length) * 100));
       }
+      
+      return count;
+    }
+
+    async function countEntriesForGroup(groupName) {
+      if (!allParts.length || !countryGroups[groupName]) return 0;
+      
+      let count = 0;
+      const countries = countryGroups[groupName];
+      
+      // Process in chunks to avoid freezing
+      const chunkSize = 100;
+      for (let i = 0; i < allParts.length; i += chunkSize) {
+        const chunk = allParts.slice(i, i + chunkSize);
+        
+        for (const entry of chunk) {
+          const entryCountry = await getCountryFromEntry(entry);
+          if (!entryCountry) continue;
+          
+          const standardizedEntryCountry = countryMap[entryCountry] || entryCountry;
+          
+          for (const country of countries) {
+            const standardizedCountry = countryMap[country] || country;
+            if (standardizedEntryCountry.toLowerCase() === standardizedCountry.toLowerCase()) {
+              count++;
+              break;
+            }
+          }
+        }
+        
+        // Update progress
+        updateProgress(Math.min(100, (i / allParts.length) * 100));
+      }
+      
+      return count;
+    }
+
+    async function updateGroupCounts() {
+      showLoading("Calculating group counts...");
+      groupCounts = {};
+      
+      const groupNames = Object.keys(countryGroups);
+      for (let i = 0; i < groupNames.length; i++) {
+        const groupName = groupNames[i];
+        groupCounts[groupName] = await countEntriesForGroup(groupName);
+        updateProgress((i / groupNames.length) * 100);
+      }
+      
       renderGroupCounts();
+      hideLoading();
     }
 
     function renderGroupCounts() {
@@ -508,26 +631,38 @@
       });
     }
 
-    function renderEntries(filterFn, groupNames = []) {
+    async function renderEntries(filterFn, groupNames = []) {
+      showLoading("Filtering entries...");
       const container = document.getElementById('entriesContainer');
       container.innerHTML = '';
       let count = 0;
       currentFilteredEntries = [];
       currentGroupNames = groupNames;
       
-      allParts.forEach(entry => {
-        if (filterFn(entry)) {
-          const div = document.createElement('div');
-          div.className = 'entry';
-          div.textContent = entry.trim();
-          container.appendChild(div);
-          count++;
-          currentFilteredEntries.push(entry.trim());
+      // Process in chunks to avoid freezing
+      const chunkSize = 100;
+      for (let i = 0; i < allParts.length; i += chunkSize) {
+        const chunk = allParts.slice(i, i + chunkSize);
+        const results = await Promise.all(chunk.map(entry => filterFn(entry)));
+        
+        for (let j = 0; j < results.length; j++) {
+          if (results[j]) {
+            const div = document.createElement('div');
+            div.className = 'entry';
+            div.textContent = chunk[j].trim();
+            container.appendChild(div);
+            count++;
+            currentFilteredEntries.push(chunk[j].trim());
+          }
         }
-      });
+        
+        // Update progress
+        updateProgress(Math.min(100, (i / allParts.length) * 100));
+      }
       
       updateCounters(count);
       document.getElementById('downloadBtn').style.display = count > 0 ? 'block' : 'none';
+      hideLoading();
     }
 
     function updateGroupCountriesDisplay(groupNames) {
@@ -543,8 +678,7 @@
         if (countryGroups[groupName]) {
           html += `<strong>${groupName}:</strong><br>`;
           countryGroups[groupName].forEach(country => {
-            const count = countEntriesForCountry(country);
-            html += `<span class="country-count">${country}(${count})</span>`;
+            html += `<span class="country-count">${country}</span>`;
           });
           html += '<br><br>';
         }
@@ -568,13 +702,15 @@
       const file = this.files[0];
       if (!file) return;
       
+      showLoading("Loading file...");
+      
       const reader = new FileReader();
       reader.onload = function(e) {
         entries = e.target.result;
         allParts = entries.split(/\n\n+/);
+        document.getElementById('manualInput').value = entries;
         updateGroupCounts();
         renderEntries(() => true);
-        document.getElementById('manualInput').value = entries;
       };
       reader.readAsText(file);
     });
@@ -606,11 +742,21 @@
       }
     });
 
-    function applyCountryFilter() {
+    async function applyCountryFilter() {
       document.getElementById('groupSelect').value = '';
       document.getElementById('groupCountries').style.display = 'none';
       const selectedOptions = Array.from(document.getElementById('countrySelect').selectedOptions).map(opt => opt.value);
-      renderEntries(entry => selectedOptions.some(country => entryContainsCountry(entry, country)));
+      
+      // Create a Set for faster lookup
+      const selectedCountries = new Set(selectedOptions.map(c => c.toLowerCase()));
+      
+      await renderEntries(async entry => {
+        const entryCountry = await getCountryFromEntry(entry);
+        if (!entryCountry) return false;
+        
+        const standardizedCountry = countryMap[entryCountry] || entryCountry;
+        return selectedCountries.has(standardizedCountry.toLowerCase());
+      });
     }
 
     function copyVisibleEntries() {
