@@ -736,7 +736,8 @@
         for (const groupName of filteredOptions) {
           if (countryGroups[groupName]) {
             for (const country of countryGroups[groupName]) {
-              selectedCountries.add(country.toLowerCase());
+              const standardizedCountry = countryMap[country] || country;
+              selectedCountries.add(standardizedCountry.toLowerCase());
             }
           }
         }
@@ -759,7 +760,10 @@
       const selectedOptions = Array.from(document.getElementById('countrySelect').selectedOptions).map(opt => opt.value);
       
       // Create a Set for faster lookup
-      const selectedCountries = new Set(selectedOptions.map(c => c.toLowerCase()));
+      const selectedCountries = new Set(selectedOptions.map(c => {
+        const standardizedCountry = countryMap[c] || c;
+        return standardizedCountry.toLowerCase();
+      }));
       
       await renderEntries(async entry => {
         const entryCountry = await getCountryFromEntry(entry);
@@ -797,7 +801,7 @@
       location.reload();
     }
 
-    function createNewGroup() {
+    async function createNewGroup() {
       const groupName = prompt("Enter new group name:");
       if (!groupName) return;
       
@@ -811,18 +815,32 @@
       populateDropdowns();
       document.getElementById('groupSelect').value = groupName;
       updateGroupCountriesDisplay([groupName]);
-      updateGroupCounts();
-      renderEntries(entry => countryListNew.some(c => entryContainsCountry(entry, c)), [groupName]);
+      await updateGroupCounts();
+      
+      // Create a set of all countries in the new group for faster lookup
+      const selectedCountries = new Set();
+      for (const country of countryListNew) {
+        const standardizedCountry = countryMap[country] || country;
+        selectedCountries.add(standardizedCountry.toLowerCase());
+      }
+      
+      await renderEntries(async (entry) => {
+        const entryCountry = await getCountryFromEntry(entry);
+        if (!entryCountry) return false;
+        
+        const standardizedCountry = countryMap[entryCountry] || entryCountry;
+        return selectedCountries.has(standardizedCountry.toLowerCase());
+      }, [groupName]);
     }
 
-    function deleteGroup(groupName) {
+    async function deleteGroup(groupName) {
       if (confirm(`Are you sure you want to delete the group "${groupName}"?`)) {
         delete userGroups[groupName];
         localStorage.setItem('userGroups', JSON.stringify(userGroups));
         countryGroups = { ...defaultGroups, ...userGroups };
         populateDropdowns();
-        updateGroupCounts();
-        renderEntries(() => true);
+        await updateGroupCounts();
+        await renderEntries(() => true);
         document.getElementById('groupCountries').style.display = 'none';
       }
     }
