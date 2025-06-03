@@ -431,7 +431,7 @@
       if (!allParts.length || !countryGroups[groupName]) return 0;
       return allParts.filter(entry => 
         countryGroups[groupName].some(country => entryContainsCountry(entry, country))
-        .length;
+        ).length;
     }
 
     function updateGroupCounts() {
