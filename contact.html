@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Contact | Sahyog</title>
+  <meta name="description" content="Contact Sahyog NGO for volunteering, partnerships, or donations." />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a class="brand" href="index.html">
+        <div class="brand__logo">S</div>
+        <div class="brand__text">
+          <div class="brand__name">Sahyog</div>
+          <div class="brand__tagline">Together for a better society</div>
+        </div>
+      </a>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+
+      <nav class="nav" id="navMenu">
+        <a class="nav__link" href="index.html">Home</a>
+        <a class="nav__link" href="about.html">About</a>
+        <a class="nav__link" href="work.html">Our Work</a>
+        <a class="nav__link" href="get-involved.html">Get Involved</a>
+        <a class="nav__link" href="donate.html">Donate</a>
+        <a class="nav__link active" href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <h1>Contact Us</h1>
+        <p class="muted">We will respond as soon as possible.</p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container grid grid--2">
+        <div class="card">
+          <h2>Send a Message</h2>
+
+          <!-- For demo: This uses mailto (works without backend).
+               Later on Hostinger you can connect a PHP form handler if needed. -->
+          <form class="form" action="mailto:info@sahyog.org" method="post" enctype="text/plain">
+            <label>
+              Full Name
+              <input type="text" name="name" placeholder="Your name" required>
+            </label>
+
+            <label>
+              Email
+              <input type="email" name="email" placeholder="you@example.com" required>
+            </label>
+
+            <label>
+              Message
+              <textarea name="message" rows="5" placeholder="Write your message..." required></textarea>
+            </label>
+
+            <button class="btn btn--primary" type="submit">Send</button>
+          </form>
+
+          <p class="muted small">
+            Note: This demo uses email client sending. For a real form submission, use PHP or API-based form handling.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Reach Us</h2>
+          <div class="info">
+            <div><strong>Email:</strong> info@sahyog.org</div>
+            <div><strong>Phone:</strong> +91-XXXXXXXXXX</div>
+            <div><strong>Location:</strong> Prayagraj, Uttar Pradesh, India</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <h3>Office Hours</h3>
+          <p class="muted">Mon–Sat: 10:00 AM – 6:00 PM</p>
+
+          <a class="btn btn--outline" href="donate.html">Donation Details</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__bottom">
+      <p class="muted">© <span id="year"></span> Sahyog. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
