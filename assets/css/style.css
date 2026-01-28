@@ -385,3 +385,20 @@ input:focus, textarea:focus{
   .nav.open{ display:flex; }
   .nav__link{ width: 100%; }
 }
+
+/* Added by Jules */
+.card__img {
+  width: 100%;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  display: block;
+  object-fit: cover;
+}
+
+.hero__img {
+  width: 100%;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  display: block;
+  object-fit: cover;
+}
