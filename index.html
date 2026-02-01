@@ -6,13 +6,16 @@
   <title>Sahyog | NGO for Community Support</title>
   <meta name="description" content="Sahyog is an NGO working for education, healthcare awareness, and community development." />
   <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="assets/images/logo.png" />
 </head>
 <body>
 
   <header class="header">
     <div class="container header__inner">
       <a class="brand" href="index.html">
-        <div class="brand__logo">S</div>
+        <div class="brand__logo">
+          <img src="assets/images/logo.png" alt="Sahyog Logo">
+        </div>
         <div class="brand__text">
           <div class="brand__name">Sahyog</div>
           <div class="brand__tagline">Together for a better society</div>
@@ -38,6 +41,12 @@
   <main>
 
     <section class="hero">
+      <div class="slideshow" id="heroSlideshow">
+        <div class="slide active" style="background-image: url('assets/images/gallery/gallery-4.jpg')"></div>
+        <div class="slide" style="background-image: url('assets/images/gallery/gallery-5.jpg')"></div>
+        <div class="slide" style="background-image: url('assets/images/gallery/gallery-6.jpg')"></div>
+        <div class="overlay"></div>
+      </div>
       <div class="container hero__grid">
         <div class="hero__content">
           <div class="badge">Registered NGO • Community Support</div>
@@ -45,11 +54,6 @@
           <p class="lead">
             Our primary goal is to create employment, connect village workers to urban livelihoods, and educate them via volunteers.
           </p>
-          <div class="slideshow" id="heroSlideshow">
-            <div class="slide active" style="background-image: url('assets/images/gallery/gallery-4.jpg')"></div>
-            <div class="slide" style="background-image: url('assets/images/gallery/gallery-5.jpg')"></div>
-            <div class="slide" style="background-image: url('assets/images/gallery/gallery-6.jpg')"></div>
-          </div>
 
           <div class="hero__actions">
             <a class="btn btn--primary" href="get-involved.html">Become a Volunteer</a>
@@ -100,7 +104,7 @@
 
         <div class="grid grid--3">
           <div class="card">
-            <img src="assets/images/gallery/gallery-1.jpg" alt="Employment" class="card__img">
+            <img src="assets/images/employment.jpg" alt="Employment" class="card__img">
             <h3>Employment Creation</h3>
             <p class="muted">
               Creating sustainable job opportunities for village communities.
@@ -180,8 +184,8 @@
 
       <div>
         <div class="footer__title">Contact</div>
-        <p class="muted">Email: info@sahyog.org</p>
-        <p class="muted">Phone: +91-XXXXXXXXXX</p>
+        <p class="muted">Email: wesahyog@gmail.com</p>
+        <p class="muted">Phone: +91 9453604090</p>
         <p class="muted">Location: Prayagraj, Uttar Pradesh, India</p>
       </div>
     </div>
@@ -192,5 +196,6 @@
   </footer>
 
   <script src="assets/js/main.js"></script>
+  <a href="https://razorpay.me/@sahyogassociation" class="sticky-donate">Donate Now</a>
 </body>
 </html>
