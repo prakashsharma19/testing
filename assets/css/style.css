@@ -292,7 +292,7 @@ h1{
 }
 
 .hero__card .card{
-  background: rgba(255,255,255,.95);
+  background: rgba(255,255,255,.8);
   backdrop-filter: blur(4px);
 }
 
@@ -484,7 +484,7 @@ input:focus, textarea:focus{
 
 /* Updated hero text for dark overlay */
 .hero__content {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   padding: 30px;
