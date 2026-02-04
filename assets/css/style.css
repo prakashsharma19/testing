@@ -484,7 +484,7 @@ input:focus, textarea:focus{
 
 /* Updated hero text for dark overlay */
 .hero__content {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   padding: 30px;
