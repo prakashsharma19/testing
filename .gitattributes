@@ -1,0 +1,21 @@
+# Normalize source files so pull request diffs stay stable across platforms.
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.md text eol=lf
+*.svg text eol=lf
+CNAME text eol=lf
+
+# Mark media and packaged assets as binary so PR/diff tools do not try to parse them as text.
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
