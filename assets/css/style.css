@@ -613,3 +613,47 @@ input:focus, textarea:focus{
     height: 250px;
   }
 }
+
+/* Volunteer page */
+.volunteer-intro{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.volunteer-intro__content{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.volunteer-intro__content h2{
+  color: var(--heading-color);
+  font-size: 32px;
+  margin: 0 0 12px;
+}
+
+.volunteer-intro__image img{
+  width: 100%;
+  height: 100%;
+  min-height: 360px;
+  object-fit: cover;
+  border-radius: 20px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+  display: block;
+}
+
+.volunteer-gallery .gallery-item img{
+  height: 280px;
+}
+
+@media (max-width: 900px){
+  .volunteer-intro{
+    grid-template-columns: 1fr;
+  }
+
+  .volunteer-intro__image img{
+    min-height: 260px;
+  }
+}
