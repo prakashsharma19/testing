@@ -814,6 +814,17 @@ input:focus, textarea:focus{
 .member__avatar.c4{ background: linear-gradient(135deg, #a97a52, #6b4a30); }
 .member__avatar.c5{ background: linear-gradient(135deg, var(--teal-700), var(--forest)); }
 
+.member__photo{
+  width: 76px; height: 76px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--shadow-sm);
+  border: 3px solid var(--white);
+  outline: 1px solid var(--line);
+  display: block;
+}
+
 /* ---------- Sticky buttons ---------- */
 .sticky-donate {
   position: fixed;
