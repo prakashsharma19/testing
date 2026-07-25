@@ -7,7 +7,7 @@
   <meta name="description" content="Contact Sahyog NGO for volunteering, partnerships, or donations." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700;800&family=Noto+Serif+Devanagari:wght@500;600;700&family=Hind:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/style.css" />
   <link rel="icon" href="assets/images/logo-new.png" />
 </head>
@@ -21,7 +21,7 @@
         </div>
         <div class="brand__text">
           <div class="brand__name">Sahyog</div>
-          <div class="brand__tagline">Empowering Communities. Transforming Lives.</div>
+          <div class="brand__tagline" data-hi="समुदायों को सशक्त बनाना। जीवन में बदलाव लाना।">Empowering Communities. Transforming Lives.</div>
         </div>
       </a>
 
@@ -30,14 +30,15 @@
       </button>
 
       <nav class="nav" id="navMenu">
-        <a class="nav__link" href="index.html">Home</a>
-        <a class="nav__link" href="about.html">About</a>
-        <a class="nav__link" href="work.html">Our Work</a>
-        <a class="nav__link" href="volunteer.html">Our Team</a>
-        <a class="nav__link" href="gallery.html">Gallery</a>
-        <a class="nav__link" href="get-involved.html">Get Involved</a>
-        <a class="nav__link active" href="contact.html">Contact</a>
-      <a class="nav__cta" href="donate.html">Donate</a>
+        <a class="nav__link" href="index.html" data-hi="मुखपृष्ठ">Home</a>
+        <a class="nav__link" href="about.html" data-hi="हमारे बारे में">About</a>
+        <a class="nav__link" href="work.html" data-hi="हमारा कार्य">Our Work</a>
+        <a class="nav__link" href="volunteer.html" data-hi="हमारी टीम">Our Team</a>
+        <a class="nav__link" href="gallery.html" data-hi="गैलरी">Gallery</a>
+        <a class="nav__link" href="get-involved.html" data-hi="जुड़ें">Get Involved</a>
+        <a class="nav__link active" href="contact.html" data-hi="संपर्क करें">Contact</a>
+      <button class="lang-toggle" type="button">हिंदी</button>
+      <a class="nav__cta" href="donate.html" data-hi="दान करें">Donate</a>
       </nav>
     </div>
   </header>
@@ -45,59 +46,59 @@
   <main>
     <section class="page-hero">
       <div class="container">
-        <span class="badge">Contact</span>
-        <h1>Contact Us</h1>
-        <p class="muted">We will respond as soon as possible.</p>
+        <span class="badge" data-hi="संपर्क करें">Contact</span>
+        <h1 data-hi="हमसे संपर्क करें">Contact Us</h1>
+        <p class="muted" data-hi="हम जल्द से जल्द आपको जवाब देंगे।">We will respond as soon as possible.</p>
       </div>
     </section>
 
     <section class="section">
       <div class="container grid grid--2">
         <div class="card">
-          <h2>Send a Message</h2>
+          <h2 data-hi="संदेश भेजें">Send a Message</h2>
 
           <form class="form" action="mailto:wesahyog@gmail.com?subject=Inquiry&body=hello i want to connect with Sahyog.." method="post" enctype="text/plain">
             <label>
-              Full Name
-              <input type="text" name="name" placeholder="Your name" required>
+              <span data-hi="पूरा नाम">Full Name</span>
+              <input type="text" name="name" placeholder="Your name" data-hi-placeholder="आपका नाम" required>
             </label>
 
             <label>
-              Email
-              <input type="email" name="email" placeholder="you@example.com" required>
+              <span data-hi="ईमेल">Email</span>
+              <input type="email" name="email" placeholder="you@example.com" data-hi-placeholder="you@example.com" required>
             </label>
 
             <label>
-              Message
-              <textarea name="message" rows="5" placeholder="Write your message..." required></textarea>
+              <span data-hi="संदेश">Message</span>
+              <textarea name="message" rows="5" placeholder="Write your message..." data-hi-placeholder="अपना संदेश लिखें..." required></textarea>
             </label>
 
-            <button class="btn btn--primary" type="submit">Send</button>
+            <button class="btn btn--primary" type="submit" data-hi="भेजें">Send</button>
           </form>
 
-          <p class="muted small">
+          <p class="muted small" data-hi="ध्यान दें: यह फ़ॉर्म आपके ईमेल क्लाइंट को खोलेगा।">
             Note: This form opens your email client.
           </p>
         </div>
 
         <div class="card">
-          <h2>Reach Us</h2>
+          <h2 data-hi="हम तक पहुंचें">Reach Us</h2>
           <div class="info">
-            <div><strong>Email:</strong> <a href="mailto:wesahyog@gmail.com?subject=Inquiry&body=hello i want to connect with Sahyog..">wesahyog@gmail.com</a></div>
-            <div><strong>Phone:</strong> +91 9453604090</div>
-            <div><strong>Location:</strong> Prayagraj, Uttar Pradesh, India</div>
+            <div><strong data-hi="ईमेल:">Email:</strong> <a href="mailto:wesahyog@gmail.com?subject=Inquiry&body=hello i want to connect with Sahyog..">wesahyog@gmail.com</a></div>
+            <div><strong data-hi="फ़ोन:">Phone:</strong> +91 9453604090</div>
+            <div><strong data-hi="स्थान:">Location:</strong> <span data-hi="प्रयागराज, उत्तर प्रदेश, भारत">Prayagraj, Uttar Pradesh, India</span></div>
           </div>
 
           <div class="divider"></div>
 
-          <a href="https://wa.me/919453604090" class="btn btn--whatsapp" target="_blank">Contact on WhatsApp</a>
+          <a href="https://wa.me/919453604090" class="btn btn--whatsapp" target="_blank" data-hi="व्हाट्सएप पर संपर्क करें">Contact on WhatsApp</a>
 
           <div class="divider"></div>
 
-          <h3>Office Hours</h3>
-          <p class="muted">Mon–Sat: 10:00 AM – 6:00 PM</p>
+          <h3 data-hi="कार्यालय समय">Office Hours</h3>
+          <p class="muted" data-hi="सोमवार–शनिवार: सुबह 10:00 – शाम 6:00">Mon–Sat: 10:00 AM – 6:00 PM</p>
 
-          <a class="btn btn--outline" href="donate.html">Donation Details</a>
+          <a class="btn btn--outline" href="donate.html" data-hi="दान संबंधी जानकारी">Donation Details</a>
         </div>
       </div>
     </section>
@@ -106,14 +107,14 @@
 
   <footer class="footer">
     <div class="container footer__bottom">
-      <div class="badge">Registered Society &bull; Reg No. ALL/02371/2025-2026</div>
-      <p>Sahyog is a youth-driven social movement dedicated to creating real, lasting impact at the grassroots level.</p>
-      <p>&copy; <span id="year"></span> Sahyog Association. All rights reserved. | Developed by <a href="https://cpstechlabs.com" target="_blank">CPS TechLabs</a></p>
+      <div class="badge" data-hi="पंजीकृत सोसाइटी &bull; रजि. सं. ALL/02371/2025-2026">Registered Society &bull; Reg No. ALL/02371/2025-2026</div>
+      <p data-hi="सहयोग एक युवा-नेतृत्व वाला सामाजिक आंदोलन है, जो जमीनी स्तर पर वास्तविक और स्थायी बदलाव लाने के लिए समर्पित है।">Sahyog is a youth-driven social movement dedicated to creating real, lasting impact at the grassroots level.</p>
+      <p>&copy; <span id="year"></span> <span data-hi="सहयोग एसोसिएशन। सर्वाधिकार सुरक्षित।">Sahyog Association. All rights reserved.</span></p>
     </div>
   </footer>
 
   <script src="assets/js/main.js"></script>
-  <a href="https://razorpay.me/@sahyogassociation" class="sticky-donate">Donate Now</a>
+  <a href="https://razorpay.me/@sahyogassociation" class="sticky-donate" data-hi="अभी दान करें">Donate Now</a>
 <a href="https://wa.me/919453604090" class="sticky-whatsapp" target="_blank"><img src="assets/images/whatsapp.svg" alt="WhatsApp"></a>
 </body>
 </html>
