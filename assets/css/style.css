@@ -844,6 +844,7 @@ input:focus, textarea:focus{
   outline: 1px solid var(--line);
 }
 .member__name{ font-size: 14px; font-weight: 600; color: var(--ink); }
+.member__role{ font-size: 12px; font-weight: 600; color: var(--gold-dark); margin-top: 2px; }
 
 .member__avatar.c1{ background: linear-gradient(135deg, var(--teal-600), var(--teal-900)); }
 .member__avatar.c2{ background: linear-gradient(135deg, var(--gold-2), var(--gold-dark)); color: var(--teal-900); }
